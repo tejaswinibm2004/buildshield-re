@@ -9,21 +9,21 @@ export async function atomicCommit({ owner, repo, branch, files, message, author
   const baseTree = parentCommit.tree.sha;
   const blobs = [];
   for (const f of files) {
-    const b = await ghFetch(`/repos/${owner}/${repo}/git/blobs`, {
+    const b = await ghFetch(`/repos/${owner}/${repo}/git/blobs`, undefined, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: f.content, encoding: 'utf-8' }),
     });
     blobs.push({ path: f.path, sha: b.sha, mode: '100644', type: 'blob' });
   }
-  const tree = await ghFetch(`/repos/${owner}/${repo}/git/trees`, {
+  const tree = await ghFetch(`/repos/${owner}/${repo}/git/trees`, undefined, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ base_tree: baseTree, tree: blobs }),
   });
-  const commit = await ghFetch(`/repos/${owner}/${repo}/git/commits`, {
+  const commit = await ghFetch(`/repos/${owner}/${repo}/git/commits`, undefined, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, tree: tree.sha, parents: [parentSha], author: { name: authorName, email: authorEmail } }),
   });
   try {
-    await ghFetch(`/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+    await ghFetch(`/repos/${owner}/${repo}/git/refs/heads/${branch}`, undefined, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sha: commit.sha, force: false }),
     });
   } catch (e) {

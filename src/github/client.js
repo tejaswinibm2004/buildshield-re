@@ -10,6 +10,9 @@ function headers(token) {
 }
 
 export async function ghFetch(path, token, opts = {}) {
+  // Tolerate ghFetch(path, {...opts}) — a past bug passed opts in the token
+  // slot, sending `Bearer [object Object]` (GitHub answers 404, not 401).
+  if (token && typeof token === 'object') { opts = token; token = undefined; }
   const t = token ?? config.githubToken;
   if (!t) { const e = new Error('GitHub token not configured (SOURCE_UNAVAILABLE)'); e.code = 'NO_TOKEN'; throw e; }
   const res = await fetch(`https://api.github.com${path}`, { ...opts, headers: { ...headers(t), ...(opts.headers ?? {}) } });

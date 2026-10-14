@@ -72,6 +72,43 @@ describe('json + intake + redact', () => {
   });
 });
 
+describe('github committer auth (regression: opts-in-token-slot sent Bearer [object Object])', () => {
+  it('atomicCommit sends the real token on every write call', async () => {
+    const { config } = await import('../src/config.js');
+    config.githubToken = 'test-token-123';
+    const seen = [];
+    const seq = [
+      { object: { sha: 'p' } },
+      { tree: { sha: 't0' } },
+      { sha: 'b1' },
+      { sha: 't1' },
+      { sha: 'c1' },
+      {},
+    ];
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = async (url, opts) => {
+      seen.push({ url: String(url).split('api.github.com')[1], auth: opts?.headers?.Authorization });
+      const body = seq.shift() ?? {};
+      return { ok: true, json: async () => body };
+    };
+    try {
+      const { atomicCommit } = await import('../src/github/committer.js');
+      const r = await atomicCommit({ owner: 'o', repo: 'r', branch: 'main', files: [{ path: 'a.txt', content: 'hi' }], message: 'm' });
+      assert.equal(r.sha, 'c1');
+      assert.equal(seen.length, 6);
+      for (const s of seen) assert.equal(s.auth, 'Bearer test-token-123');
+      assert.ok(seen[5].url.endsWith('/git/refs/heads/main'));
+    } finally {
+      globalThis.fetch = origFetch;
+      config.githubToken = '';
+    }
+  });
+  it('ghFetch treats an object 2nd arg as opts, not a token', async () => {
+    const { ghFetch } = await import('../src/github/client.js');
+    await assert.rejects(() => ghFetch('/x', { method: 'GET' }), /GitHub token not configured/);
+  });
+});
+
 describe('validators', () => {
   it('json fails on bad syntax', async () => {
     const { passed, results } = await runValidatorsForPatch([{ path: 'a.json', before: '{}', after: '{bad' }]);
