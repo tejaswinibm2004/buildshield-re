@@ -4,6 +4,8 @@ services:
     runtime: node
     plan: starter
     numInstances: 1
+    buildCommand: npm install
+    startCommand: node server.js
     healthCheckPath: /api/health
     disk:
       name: bugshield-data
