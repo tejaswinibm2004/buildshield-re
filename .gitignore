@@ -4,7 +4,10 @@ node_modules/
 /var/data/cache/
 backups/
 .env
+RENDER_ENV.local.md
 coverage/
 benchmark/results.json
 
 demo-shop/
+
+.playwright-mcp/

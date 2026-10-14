@@ -5,9 +5,16 @@
   'use strict';
   var cfg = window.BUGSHIELD_CONFIG || {};
   var scripts = document.getElementsByTagName('script');
-  var me = scripts[scripts.length - 1];
+  // Find OUR OWN script tag by src match — NOT "last script on the page".
+  // The SDK loads async, so any later-parsed script (app.js, analytics, …)
+  // would otherwise be mistaken for us, pointing the endpoint at the shop.
+  var me = null;
+  for (var i = 0; i < scripts.length; i++) {
+    try { if (/\/sdk\/(bugshield|bs)\.js(\?|#|$)/.test(scripts[i].src)) { me = scripts[i]; break; } } catch (e) { /* ignore */ }
+  }
+  if (!me) me = scripts[scripts.length - 1]; // fallback: last script tag
   var appId = cfg.appId || (me && me.getAttribute('data-app-id')) || '';
-  var key = cfg.ingestionKey || (me && me.getAttribute('data-key')) || '';
+  var key = cfg.ingestionKey || cfg.key || (me && me.getAttribute('data-key')) || '';
   var endpoint = cfg.endpoint || (me && me.getAttribute('data-endpoint')) || (location.origin.replace(/\/$/, '') === '' ? '' : null);
   // endpoint defaults to the script origin
   try { if (!cfg.endpoint && me && me.src) endpoint = new URL(me.src).origin; } catch (e) {}
@@ -115,7 +122,12 @@
         page_url: location.href, context: { user_agent: navigator.userAgent, viewport: innerWidth + 'x' + innerHeight, language: navigator.language, referrer: document.referrer },
         element: picked || undefined, errors: errBuf, console: consoleBuf.slice(-20), network: netBuf.slice(-20)
       })
-    }).then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); }).then(function (x) {
+    }).then(function (r) { return r.text().then(function (t) {
+      var j;
+      try { j = JSON.parse(t); }
+      catch (e) { j = { success: false, error: { message: 'bad server response (HTTP ' + r.status + ', non-JSON)' } }; }
+      return { status: r.status, j: j };
+    }); }).then(function (x) {
       if (x.j.success) { msgEl.textContent = x.j.status === 'DEDUPLICATED' ? 'Thanks — already reported, your vote was counted.' : 'Thanks! Report received.'; if (modal) setTimeout(function () { modal.style.display = 'none'; }, 1200); }
       else if (x.status === 429) msgEl.textContent = 'Too many reports — please retry shortly.';
       else if (x.status === 401 || x.status === 403) { msgEl.textContent = 'Widget misconfigured (bad key/origin).'; console.error('[bugshield] widget misconfigured', x.j); }
