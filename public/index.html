@@ -1,14 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BugShield Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%235aa2ff' d='M16 2l11 4v8c0 7-4.6 12.4-11 16C9.6 26.4 5 21 5 14V6z'/%3E%3Cpath fill='%230b1020' d='M13.5 16.5l-3-3 1.8-1.8 1.2 1.2 5.2-5.2L20.5 9.5z'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<header class="top"><div class="brand">🛡 BugShield</div><nav id="nav"></nav><div id="me"></div></header>
-<main id="app"><p class="muted">Loading…</p></main>
-<footer class="foot muted">BugShield demo — single instance, SQLite. <span id="health"></span></footer>
+<a class="skip" href="#app">Skip to content</a>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal-root"></div>
+<div id="shell" hidden>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">BugShield</span></div>
+    <div class="top-right">
+      <span id="live-badge" class="live off" title="Live updates status"><span class="dot"></span><span id="live-text">offline</span></span>
+      <button id="theme-btn" class="icon-btn" title="Toggle light / dark">Theme</button>
+      <span id="me-chip" class="me-chip"></span>
+      <button id="logout-btn" class="btn ghost sm">Log out</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="side"><nav id="nav" aria-label="Primary"></nav></aside>
+    <main id="app" tabindex="-1"></main>
+  </div>
+  <footer class="foot">BugShield · single instance · Postgres-backed · <span id="health-foot"></span></footer>
+</div>
+<div id="login-root"></div>
 <script src="/app.js"></script>
 </body>
 </html>
