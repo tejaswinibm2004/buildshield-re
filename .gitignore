@@ -6,3 +6,5 @@ backups/
 .env
 coverage/
 benchmark/results.json
+
+demo-shop/

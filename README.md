@@ -12,14 +12,14 @@ node server.js         # :3000, data in ./.var/data
 ```
 
 ## Env vars
-PORT, NODE_ENV, BUGSHIELD_DATA_DIR (use /var/data on Render), PUBLIC_BASE_URL,
+PORT, NODE_ENV, DATABASE_URL (Supabase pooled URI; required in production, else local SQLite for dev/test), BUGSHIELD_DATA_DIR (snapshot cache only), PUBLIC_BASE_URL,
 BOOTSTRAP_OWNER_EMAIL, BOOTSTRAP_OWNER_PASSWORD (set before first boot),
 AI_BASE_URL, AI_MODEL, AI_API_KEY (missing => honest AI_UNAVAILABLE),
 GITHUB_TOKEN (fine-grained, Contents R&W), RENDER_API_KEY (optional),
 APP_SECRET_KEY (32+ bytes), QUEUE_CONCURRENCY.
 
 ## Honest limits
-Single instance (SQLite + in-process queue). Deploy = commit then host rebuilds (1–3 min). Free models flake. Without project tests the result is labelled UNVERIFIED. Some validators need runtimes on the host. See spec §21.
+Single instance (in-process queue). Deploy = commit then host rebuilds (1–3 min). Free models flake. Without project tests the result is labelled UNVERIFIED. Some validators need runtimes on the host. Free-tier sleep/pause: Render free sleeps, Supabase free pauses after ~7 idle days (see DECISIONS.md). See spec §21.
 
 ## Demo client
 Copy `client-template/` into its own repo `quickbyte-shop` (static site on Render, Auto-Deploy ON, build `node scripts/build.mjs`). Planted bugs in `client-template/` + `docs/PLANTED_BUGS.md` (create before demo).

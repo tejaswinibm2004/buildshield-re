@@ -35,7 +35,8 @@ render.yaml, DECISIONS.md, PLAN.md
 - [x] M7 Approval gate + roles + WebSocket + settings
 - [x] M8 Widget extras (picker, console/error/network capture; screenshot skipped per DECISIONS)
 - [x] M9 Benchmark (21 cross-stack cases) + eval page + hardening (redaction, backups, resume, mutex)
-- [ ] M10 Render go-live per RUNBOOK.md (manual — needs human: PAT, env vars, repos; record in docs/EVIDENCE.md)
+- [x] M9b Supabase migration: dual pg/sqlite backend, async DB layer, free-tier render.yaml
+- [ ] M10 Render go-live per RUNBOOK.md (manual — needs human: Supabase project, PAT, env vars, repos; record in docs/EVIDENCE.md)
 
 ## Test commands
 - `npm test` — node:test suite

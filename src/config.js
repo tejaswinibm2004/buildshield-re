@@ -22,6 +22,7 @@ export const config = {
   nodeEnv: req('NODE_ENV', 'development'),
   get isProd() { return this.nodeEnv === 'production'; },
   dataDir: req('BUGSHIELD_DATA_DIR', './.var/data'),
+  databaseUrl: req('DATABASE_URL', ''),
   publicBaseUrl: req('PUBLIC_BASE_URL', ''),
   bootstrapOwnerEmail: req('BOOTSTRAP_OWNER_EMAIL', 'owner@bugshield.local'),
   bootstrapOwnerPassword: req('BOOTSTRAP_OWNER_PASSWORD', ''),
@@ -58,10 +59,16 @@ export function configSummaryMasked() {
     renderApiKey: config.renderApiKey ? '(set, masked)' : '(missing)',
     autoDeployDefault: config.autoDeployDefault,
     riskHigh: config.riskHigh,
+    db: config.databaseUrl ? '(postgres, host masked)' : '(local sqlite)',
   };
 }
 
 export function validateConfigOrThrow() {
   if (!config.dataDir) throw new Error('BUGSHIELD_DATA_DIR is required');
   if (config.appSecret.length < 16) throw new Error('APP_SECRET_KEY must be >= 16 chars');
+  // Production must use Postgres/Supabase: local SQLite on an ephemeral disk
+  // would silently lose all data on every restart/redeploy.
+  if (config.isProd && !config.databaseUrl) {
+    throw new Error('DATABASE_URL is required in production (Supabase Postgres). Refusing to boot on ephemeral SQLite.');
+  }
 }

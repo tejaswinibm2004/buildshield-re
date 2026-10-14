@@ -18,3 +18,5 @@
 - Headless-browser reproduction: not implemented; evidence honestly says "not performed".
 - Project-owned test suites: detected conceptually but NOT auto-run (no dep install in sandbox, no secrets to project scripts); validator reports NOT_PERFORMED honestly.
 - WS auth: browser cookies sent on handshake are used; no JS-readable session token.
+- Database: dual backend. `DATABASE_URL` set → Supabase/Postgres (`pg` pool, `schema.pg.sql`); unset → local SQLite (dev/test). All SQL uses `?` placeholders, rewritten to `$n` for pg. New ids via `insertGetId` (RETURNING on pg). See "free-tier caveats" below.
+- Free-tier caveats (honest): Supabase free projects PAUSE after ~7 days of inactivity (unpause in their dashboard, then restart the Render service); Render free web services SLEEP (cold starts delay the queue/verifier). Both are fine for a demo, bad for anything urgent. File backups only run on the SQLite backend; on Supabase, backups are Supabase's job.

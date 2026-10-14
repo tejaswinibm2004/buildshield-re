@@ -2,22 +2,20 @@ services:
   - type: web
     name: bugshield-platform
     runtime: node
-    plan: starter
+    plan: free
     numInstances: 1
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /api/health
-    disk:
-      name: bugshield-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: 24.15.0
       - key: BUGSHIELD_DATA_DIR
-        value: /var/data
+        value: ./.var/data
+      - key: DATABASE_URL
+        sync: false
       - key: PUBLIC_BASE_URL
         sync: false
       - key: BOOTSTRAP_OWNER_EMAIL

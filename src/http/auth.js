@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { getDb, nowIso } from '../db/db.js';
+import { get, run, nowIso } from '../db/db.js';
 
 export const ROLES = ['owner', 'admin', 'reviewer', 'viewer'];
 const N = 16384, KEYLEN = 64;
@@ -19,51 +19,47 @@ export function verifyPassword(password, saltHex, hashHex) {
   return crypto.timingSafeEqual(a, b);
 }
 
-export function ensureBootstrapOwner(email, passwordOrEmpty) {
-  const db = getDb();
-  const count = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-  if (count > 0) return { created: false };
+export async function ensureBootstrapOwner(email, passwordOrEmpty) {
+  const row = await get('SELECT COUNT(*) AS c FROM users');
+  if (Number(row.c) > 0) return { created: false };
   let password = passwordOrEmpty;
   let generated = false;
   if (!password) { password = crypto.randomBytes(12).toString('base64url'); generated = true; }
   if (password.length < 12) throw new Error('BOOTSTRAP_OWNER_PASSWORD must be >= 12 chars');
   const { salt, hash } = hashPassword(password);
-  db.prepare('INSERT INTO users (email,name,role,password_hash,salt,created_at,disabled) VALUES (?,?,?,?,?,?,0)')
-    .run(email.toLowerCase(), 'Owner', 'owner', hash, salt, nowIso());
+  await run('INSERT INTO users (email,name,role,password_hash,salt,created_at,disabled) VALUES (?,?,?,?,?,?,0)',
+    email.toLowerCase(), 'Owner', 'owner', hash, salt, nowIso());
   return { created: true, generated, password: generated ? password : undefined };
 }
 
-export function createSession(userId) {
-  const db = getDb();
+export async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const now = Date.now();
-  db.prepare('INSERT INTO sessions (user_id,token_hash,created_at,expires_at,last_seen) VALUES (?,?,?,?,?)')
-    .run(userId, tokenHash, new Date(now).toISOString(), new Date(now + SESSION_TTL_MS).toISOString(), new Date(now).toISOString());
+  await run('INSERT INTO sessions (user_id,token_hash,created_at,expires_at,last_seen) VALUES (?,?,?,?,?)',
+    userId, tokenHash, new Date(now).toISOString(), new Date(now + SESSION_TTL_MS).toISOString(), new Date(now).toISOString());
   return token;
 }
 
-export function getUserByToken(token) {
+export async function getUserByToken(token) {
   if (!token) return null;
-  const db = getDb();
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  const s = db.prepare('SELECT * FROM sessions WHERE token_hash=?').get(tokenHash);
+  const s = await get('SELECT * FROM sessions WHERE token_hash=?', tokenHash);
   if (!s) return null;
   if (new Date(s.expires_at).getTime() < Date.now()) {
-    db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash);
+    await run('DELETE FROM sessions WHERE token_hash=?', tokenHash);
     return null;
   }
-  const u = db.prepare('SELECT * FROM users WHERE id=? AND disabled=0').get(s.user_id);
+  const u = await get('SELECT * FROM users WHERE id=? AND disabled=0', s.user_id);
   if (!u) return null;
-  db.prepare('UPDATE sessions SET last_seen=? WHERE token_hash=?').run(nowIso(), tokenHash);
+  await run('UPDATE sessions SET last_seen=? WHERE token_hash=?', nowIso(), tokenHash);
   return { id: u.id, email: u.email, name: u.name, role: u.role };
 }
 
-export function destroySession(token) {
+export async function destroySession(token) {
   if (!token) return;
-  const db = getDb();
   const h = crypto.createHash('sha256').update(token).digest('hex');
-  db.prepare('DELETE FROM sessions WHERE token_hash=?').run(h);
+  await run('DELETE FROM sessions WHERE token_hash=?', h);
 }
 
 // login rate limit + lockout (in-memory)

@@ -1,8 +1,19 @@
 # RUNBOOK — Render go-live + smoke tests S1..S7
 
-## Dashboard (Web Service, Starter + disk)
+## 0. Supabase (free Postgres) — do this FIRST
+1. supabase.com → New project (free plan), pick a region near your Render region.
+2. Wait for provisioning → Project Settings (or Connect) → copy the **pooled**
+   connection string (port **6543**, password included). It looks like
+   `postgres://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres`.
+3. Paste it as `DATABASE_URL` on the Render service (step 2 below). Tables are
+   created automatically on first boot (migrations run in `server.js`).
+4. Free-tier rule: projects **pause after ~7 days idle**. If the dashboard
+   suddenly can't reach the DB ("database unreachable" in logs), unpause in
+   Supabase → Manual Deploy / restart the Render service.
+
+## Dashboard (Web Service, FREE tier + Supabase)
 1. Push this repo to GitHub. Create Render Web Service from repo, `render.yaml` blueprint.
-2. Set env: NODE_ENV=production, BUGSHIELD_DATA_DIR=/var/data, PUBLIC_BASE_URL, BOOTSTRAP_OWNER_EMAIL, BOOTSTRAP_OWNER_PASSWORD (before first boot), AI_BASE_URL, AI_MODEL, AI_API_KEY, GITHUB_TOKEN (fine-grained, Contents R&W on client repo), APP_SECRET_KEY (32+ random bytes).
+2. Set env: NODE_ENV=production, DATABASE_URL (Supabase pooled URI — REQUIRED, boot fails without it), PUBLIC_BASE_URL, BOOTSTRAP_OWNER_EMAIL, BOOTSTRAP_OWNER_PASSWORD (before first boot), AI_BASE_URL, AI_MODEL, AI_API_KEY, GITHUB_TOKEN (fine-grained, Contents R&W on client repo), APP_SECRET_KEY (32+ random bytes).
 3. Deploy, open /api/health, login, connect website (repo URL, branch main, site URL, /version.json).
 4. Copy widget snippet with `bsk_...` key into client site env.
 
