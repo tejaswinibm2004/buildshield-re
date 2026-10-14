@@ -1,0 +1,20 @@
+{
+  "name": "bugshield-platform",
+  "version": "0.1.0",
+  "description": "BugShield dashboard + API",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "eval": "node benchmark/runner.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}

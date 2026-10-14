@@ -1,0 +1,8 @@
+node_modules/
+.var/
+*.db*
+/var/data/cache/
+backups/
+.env
+coverage/
+benchmark/results.json

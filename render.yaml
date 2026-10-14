@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: bugshield-platform
+    runtime: node
+    plan: starter
+    numInstances: 1
+    healthCheckPath: /api/health
+    disk:
+      name: bugshield-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: BUGSHIELD_DATA_DIR
+        value: /var/data
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: BOOTSTRAP_OWNER_EMAIL
+        sync: false
+      - key: BOOTSTRAP_OWNER_PASSWORD
+        sync: false
+      - key: AI_BASE_URL
+        sync: false
+      - key: AI_MODEL
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: APP_SECRET_KEY
+        generateValue: true

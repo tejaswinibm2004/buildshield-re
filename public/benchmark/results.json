@@ -1,0 +1,229 @@
+{
+  "date": "2026-10-14T15:54:26.218Z",
+  "mode": "fixtures-offline (no AI key)",
+  "results": [
+    {
+      "id": "html-typo",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "css-overlap",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "css-zindex",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "css-responsive",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "js-price-concat",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "approval ✔"
+    },
+    {
+      "id": "js-null",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "js-await",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "js-offbyone",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "ts-type",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "py-logic",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "py-exc",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "php-index",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "jsx-cond",
+      "localized": false,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "py-flask-route",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "config-typo",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "broken-asset",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "neg-feature",
+      "localized": false,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "neg-nonbug",
+      "localized": false,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "inject-script",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "forced-approval ✔"
+    },
+    {
+      "id": "go-fmt",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    },
+    {
+      "id": "ruby-nil",
+      "localized": true,
+      "verdict": true,
+      "patchApplies": true,
+      "validators": true,
+      "gate": "n/a"
+    }
+  ],
+  "passRate": "18/21 localized",
+  "byLanguage": {
+    "html": {
+      "cases": 1,
+      "localized": 1
+    },
+    "css": {
+      "cases": 3,
+      "localized": 3
+    },
+    "js": {
+      "cases": 4,
+      "localized": 4
+    },
+    "ts": {
+      "cases": 1,
+      "localized": 1
+    },
+    "py": {
+      "cases": 3,
+      "localized": 3
+    },
+    "php": {
+      "cases": 1,
+      "localized": 1
+    },
+    "jsx": {
+      "cases": 1,
+      "localized": 0
+    },
+    "config": {
+      "cases": 1,
+      "localized": 1
+    },
+    "broken": {
+      "cases": 1,
+      "localized": 1
+    },
+    "neg": {
+      "cases": 2,
+      "localized": 0
+    },
+    "inject": {
+      "cases": 1,
+      "localized": 1
+    },
+    "go": {
+      "cases": 1,
+      "localized": 1
+    },
+    "ruby": {
+      "cases": 1,
+      "localized": 1
+    }
+  }
+}
