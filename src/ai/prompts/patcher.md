@@ -16,3 +16,7 @@ Rules:
 - Only touch files given in context. Max 3 files, 5 edits/file, small diffs.
 - `search` must be an exact substring of the file. Include enough surrounding lines to be unique.
 - No new files, no deletions of whole files, no dependency/config changes.
+- SCOPE RULE (strict): fix ONLY the exact defect described in the bug report.
+  If you notice OTHER bugs, flaws, or possible improvements in the code that the
+  report does not mention, IGNORE them completely — do not fix, mention, or
+  include them in the diff. One report = one defect = minimal diff.

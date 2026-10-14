@@ -22,3 +22,6 @@ Rules:
 - is_defect=false when the report asks for a feature, misunderstands behavior, or the code looks correct.
 - confidence < 0.5 means INVALID_REPORT downstream.
 - Cite actual lines; never invent file paths.
+- SCOPE RULE: judge ONLY the reported symptom. Other flaws in the code that the
+  report does not mention are out of scope — do not factor them into the
+  verdict, and do not ask for them to be fixed.
