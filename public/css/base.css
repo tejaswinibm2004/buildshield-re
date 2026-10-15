@@ -1,5 +1,6 @@
 /* Base: reset, typography, focus, scrollbars, shell frame (D-1..D-4). */
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--bg-0); color: var(--text-1);

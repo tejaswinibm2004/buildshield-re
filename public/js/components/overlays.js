@@ -71,7 +71,7 @@ export function openModal({ title, body, actions = [], size = '' }) {
   const esc2 = e => { if (e.key === 'Escape') { document.removeEventListener('keydown', esc2); close(); } };
   document.addEventListener('keydown', esc2);
   const b = root.querySelector('#m-body');
-  if (typeof body === 'string') b.innerHTML = body; else b.appendChild(body);
+  if (typeof body === 'string') b.innerHTML = body; else if (body) b.appendChild(body);
   const f = root.querySelector('#m-foot');
   for (const a of actions) {
     const btn = document.createElement('button');
