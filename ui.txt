@@ -1,0 +1,259 @@
+================================================================================
+BUGSHIELD DASHBOARD — UI/UX HANDOFF (ui.txt)
+For: the next AI agent or developer taking over frontend work.
+Scope: UI/UX ONLY. Backend (Express API, agents, DB) is untouched and works.
+Describes commit a4524c7 ("Dashboard UI/UX overhaul"). The working tree may
+currently hold the OLD UI (it was reverted in f923878); restore the new UI with:
+  git revert f923878   (or: git checkout a4524c7 -- public/)
+Files described: public/index.html, public/styles.css (≈150 lines),
+public/app.js (≈700 lines, vanilla JS SPA, no build step, no framework).
+================================================================================
+
+0. MENTAL MODEL
+--------------------------------------------------------------------------------
+- One static shell (index.html) + one stylesheet (design tokens + components)
+  + one SPA script (app.js). No bundler, no npm frontend deps.
+- Data flows one way: view functions fetch JSON from /api/* or /auth/* and
+  render HTML strings into #app. Section 8 lists every endpoint used.
+- Theming is a single attribute: <html data-theme="dark|light">. Persisted in
+  localStorage key "bs-theme". Toggle button in the topbar.
+- Feedback primitives: toast() for all success/error notices (alert() is
+  BANNED — never reintroduce it), confirmDialog() for destructive actions,
+  skeleton() for loading states, emptyState() when lists are empty.
+
+1. DESIGN TOKENS (public/styles.css, :root block)
+--------------------------------------------------------------------------------
+Dark theme (default, [data-theme="dark"]):
+  --bg      #0b1020  page background (near-black navy)
+  --bg2     #0e1530  topbar + sidebar + input backgrounds (slightly lighter)
+  --card    #141c33  card surface
+  --card2   #1a2440  inset surfaces (hover rows, callouts, secondary panels)
+  --fg      #e8eefc  primary text (near-white blue tint)
+  --mut     #93a1bd  secondary text, placeholders, table headers, timestamps
+  --line    #263355  ALL borders, dividers, timeline spine, table rules
+  --acc     #5aa2ff  primary action blue: links, buttons, focus rings, bars
+  --acc-ink #06122e  text ON primary buttons (near-black, contrast on #5aa2ff)
+  --ok      #34c77f  green: success pills, approves, passed checks, live dot
+  --warn    #e8a63d  amber: approvals needed, timeouts, retry states
+  --bad     #e56a6a  red: failures, rejections, destructive buttons
+  --info    #5aa2ff  same as --acc; informational accents
+  --vio     #a78bfa  reserved violet (currently unused by views — free for future use, e.g. AI-related accents)
+  --shadow  0 8px 28px rgba(0,0,0,.35)  card/modal/toast elevation
+  --r       12px     standard corner radius (cards, inputs, buttons use 9px)
+
+Light theme ([data-theme="light"]) — same token names, remapped:
+  --bg #f3f6fd, --bg2 #ffffff, --card #ffffff, --card2 #eef3fd,
+  --fg #101828, --mut #5b6b85, --line #dbe4f5,
+  --acc #2456d6 (darker blue for contrast on white), --acc-ink #ffffff,
+  --ok #178a52, --warn #b07208, --bad #c43434, --info #2456d6, --vio #6d3fd4,
+  --shadow 0 8px 24px rgba(16,24,40,.10).
+  Code blocks (pre.code) STAY dark (#070c1d bg, #dbe6ff text) in both themes
+  for readability of diffs/JSON.
+
+2. GLOBAL SHELL (public/index.html)
+--------------------------------------------------------------------------------
+<body> order: skip-link → #toasts → #modal-root → #shell → #login-root → app.js.
+- .skip: "Skip to content" link, off-screen (left:-999px) until focused, then
+  visible top-left. Accent background, dark text.
+- #toasts: fixed top-right stack (max-width min(380px,90vw)), aria-live polite.
+- #modal-root: empty until a modal opens; .modal-veil fullscreen dim
+  (rgba(0,0,0,.55)) centers .modal (max 520px, card surface, 14px radius).
+- #shell[hidden] until logged in. Contains:
+  - .topbar (sticky, bg2, bottom border): left .brand-mark "BugShield" with a
+    12px accent square bullet (::before); right cluster: #live-badge, #theme-btn
+    ("Theme"), #me-chip ("email · role", muted, truncated at 240px), #logout-btn.
+  - .layout: CSS grid 210px sidebar + fluid main (max-width 1180px centered).
+  - .side: right border, vertical nav; links have hover bg, .on state with a
+    2px accent inset bar; optional .count badge for pending approvals.
+  - main#app: 22px padding, all views render here.
+  - .foot: muted 12.5px footer — "BugShield · single instance ·
+    Postgres-backed · #health-foot" (health summary injected by overview view).
+- #login-root: full-viewport centered .login-card (max 400px, 16px radius):
+  H1 "BugShield", email + password fields, inline .field-err (red, reserves
+  20px so layout doesn't jump), full-width Log in button, show/hide password
+  button absolutely positioned inside the password field, hint about
+  BOOTSTRAP_OWNER_EMAIL/PASSWORD.
+- Favicon: inline SVG data-URI shield (accent #5aa2ff shell, dark check mark).
+
+3. COMPONENT CATALOG (class → appearance → usage)
+--------------------------------------------------------------------------------
+3.1 .pill + tones (.tone-info .tone-ok .tone-warn .tone-bad .tone-mut .tone-vio)
+  Small 12px bold rounded-full label with tinted translucent background +
+  colored border (border-color: currentColor). .blink adds 1.6s pulse (used
+  for in-progress pipeline states). Every one of the 19 issue statuses maps
+  to a label+tone in the STATUS table in app.js (e.g. AWAITING_APPROVAL →
+  "Needs approval" amber blinking; RESOLVED_AND_DEPLOYED → "Live" green).
+3.2 .card — section container (surface, border, 12px radius, shadow, 18px
+  padding, 14px vertical margin). Headings inside have top margin removed.
+3.3 .stat-cards > .stat — overview KPIs: 26px extra-bold number + 13px muted
+  label, auto-fit min 150px columns.
+3.4 table.tbl — full-width, 14px, muted uppercase 12.5px headers, row dividers
+  in --line, row hover → --card2. Monospace (.mono) used for IDs/SHAs/URLs.
+3.5 Forms: label.f (13px semibold label + .hint muted 12px helper stacked),
+  .grid-form (auto-fit min 230px), inputs/selects/textarea (9px radius, bg2
+  background, line border, inherit font). .check for checkboxes (auto-width
+  box + text). .toolbar (filter row, end-aligned). .btn primary (accent bg,
+  dark bold text, brightness hover), .btn.ghost (transparent + border),
+  .btn.danger (bad-red bg, white text), .btn.sm / .icon-btn small variants.
+3.6 .callout — bordered box with 4px colored left border + card2 background.
+  Variants: default info blue, .warn amber, .bad red, .ok green. Used for
+  status reasons, approval prompts, "pipeline running" notices, scanner hits.
+3.7 .timeline — 3px --line spine with 18px left padding; each .step has an
+  11px dot (::before) colored by class: .s-ok green, .s-bad red, .s-warn
+  amber, .s-info blue. Mapping fn stepClass() matches status keywords
+  (ok/pass/approve/done/live → ok; fail/reject/invalid/error/timeout → bad;
+  pause/wait/concern/unverified/warn/skip/empty → warn; else info).
+  Name bold + status + muted summary line.
+3.8 .diff — unified-diff viewer: bordered scrollable box (max-height 520px),
+  monospace 12.5px table with TWO line-number gutters (.ln, 44px, muted,
+  bg2, unselectable). Rows: .add (green tint), .del (red tint), .hunk
+  (accent-colored @@ header), context plain. Word-wrap on (no sideways
+  scroll trap). Built by parseDiff() which tracks old/new line numbers from
+  @@ -a,b +c,d @@ headers; '---'/'+++' skipped, '\ No newline' rendered muted.
+3.9 .factor — risk breakdown row: grid "reason … ±points" + full-width .bar
+  (6px track in bg2, fill accent; .neg green for negative-point factors).
+  Bar width normalized to the largest |points| in the list.
+3.10 .dist — status distribution rows: 190px label | flexible .track (9px
+  rounded bar, accent fill) | count. .hist — 14-day issue histogram: flex
+  bars (accent, 85% opacity), 90px tall, tooltips with counts.
+3.11 .kv — definition grid (auto-fit min 200px): dt muted 12.5px, dd wrapping
+  anywhere (long URLs/SHAs never overflow).
+3.12 .snippet — relative wrapper; .copy-btn absolute top-right over <pre>.
+3.13 .skel — shimmer loading bars (gradient sweep 1.2s). .empty — centered
+  muted icon (30px) + bold title + helper text.
+3.14 #toasts .toast — card2 surface, shadow, colored 4px left border by type
+  (.ok/.warn/.bad, default info), slide-in animation, auto-dismiss ~4.2s
+  with fade. Stacked top-right.
+3.15 .live badge — pill with 8px dot: .on green pulsing ("live"), .retry
+  amber ("connecting"/"retrying"), default gray ("offline"). Driven by WS
+  state machine in app.js (setLive/connectWs/scheduleRetry with capped
+  backoff min(30s, 2s×retries)).
+
+4. VIEW-BY-VIEW LAYOUT (app.js view functions, in render order)
+--------------------------------------------------------------------------------
+4.1 Overview (overviewView): H2 → 4 .stat cards (Open issues / Fixed & live /
+  Total reports / Last deploy time) → two-column grid: left card "Issues by
+  status" (.dist bars for every status present + 14-day .hist computed
+  client-side from /api/issues?limit=100); right card "System health" (.kv:
+  AI configured+model or amber AI-unavailable pill + reason; GitHub set/
+  missing) + amber callouts when AI/GitHub missing + "Recent deployments"
+  table (issue link, short-SHA commit link to GitHub, status pill mapped
+  from deploy states, relative time). Also writes the footer health line.
+4.2 Websites list (websitesView): "Connect a website" card with 6-field form
+  (name, repo URL, branch default main, site URL + hint, health URL + hint,
+  subfolder + hint) → success opens the shown-once key modal; "Connected"
+  card with table (name, owner/repo@branch mono, site link, Manage button)
+  or globe empty-state.
+  Key modal (showKeyModal): "shown once" explainer, <pre> key, Copy + Done.
+4.3 Website detail (websiteDetail): back link + H2 name → two-column grid:
+  left "Widget snippet" card (placeholder snippet in .code with Copy; "Run
+  tests" → three GitHub/Site/AI status rows as ok-pill or bad-pill + mono
+  error); right "Settings" edit form (all fields + always-approve checkbox
+  with hint that security-sensitive always pauses) + Save → toast. Below:
+  "Ingestion keys" card (New key button → keyForm modal with label +
+  origins textarea; keys table: label+#id, created/relative, last-used or
+  "never", Active/Revoked pill, Revoke button → danger confirm modal).
+4.4 Issues list (issuesView): filter toolbar card (Status select with ALL 19
+  statuses, Site select, debounced 350ms Search) + table (mono linked ID,
+  title, status pill, site, Reports with bold N× for duplicates, relative
+  Updated) + "Load more" (cursor pagination, hidden when exhausted) +
+  inbox empty-state. Filters reset pagination.
+4.5 Issue detail (issueDetail): back link + H2 title + status pill + mono meta
+  line (id, reported/updated relative, "N duplicate reports merged" when
+  occ>1) + status_reason callout (+ amber "Human decision needed" explainer
+  when awaiting + "Pipeline running / auto-refresh" note when non-terminal).
+  Two-column grid: "Report" card (description, steps, page link, site link)
+  + "Timeline" card. Then conditional cards: "AI analysis" (verdict pill +
+  confidence %, type mono, file:lines mono, impact, explanation); "Proposed
+  fix" (risk pill colored by score ≥70 red / ≥40 amber / else green, summary,
+  diffHtml viewer, "Why this risk score" .factor bars, critic verdict pill +
+  concerns list + scanner-hits warn callout, "Validation evidence" table
+  with Passed(green)/Failed(red)/Not performed(gray) + pretty-printed
+  details); "Deployments" (short-SHA GitHub links, revert-note, branch,
+  mapped status pill, verified time, health codes); "Decisions" (Approved/
+  Rejected pills + comments + times). Final "Actions" card: approval panel
+  (comment input + Approve & deploy + Reject) only when awaiting; always
+  Re-run pipeline (toast) + Revert (danger confirm) when a patch exists.
+  Non-terminal issues poll every 8s and re-render on change; polling AND
+  websocket refreshes are suppressed while typing in any input.
+4.6 Settings (settingsView): two-column grid: "Deploy policy" form (high
+  threshold + hint, max files/edits/lines, critical-globs textarea with
+  placeholder examples, auto-deploy checkbox with OFF-means-approval hint,
+  Save → toast) + "Integrations" card (AI/GitHub ok-or-bad rows; Render
+  checks shown as muted "Optional" — NOT green — with note that
+  version.json checks work without it). Below: "Team" card (members table
+  with role pills + Active/Disabled, Add member form with inline errors,
+  role-capability legend; viewers see a permission note instead).
+4.7 Audit (auditView): filter input (matches actor/action/target, client-side)
+  + table (relative When, actor, mono action, mono target) + list empty-state.
+4.8 Evaluation (evalView): fetches /benchmark/results.json; missing → chart
+  empty-state naming the npm command. Present: date/mode line, 3 stat cards
+  (localized x/y, safety gates correct, languages), "Per-language recall"
+  table (mono language, cases, localized, % + Full(green)/Partial(amber)/
+  Miss(red) pill), "All cases" table (id, Localized/Patch/Validators pills,
+  gate text).
+4.9 Login (loginView, rendered into #login-root with #shell hidden): centered
+  400px card, inline .field-err (no alerts), show/hide password, Enter
+  submits, bootstrap hint. On success: connectWs(), route to overview.
+
+5. BEHAVIOR RULES (must preserve in any rework)
+--------------------------------------------------------------------------------
+- api() injects X-Requested-With + credentials; on 401 (and not already on
+  login) it redirects to #/login and throws "Session expired".
+- route() runs per-route cleanup (polling timers) BEFORE rendering; every
+  view starts with skeleton() then try/catch → error empty-state card.
+- Never re-render while the user types (approval comments, filters, forms):
+  both the WS handler and the poll tick check document.activeElement.
+- Every destructive action goes through confirmDialog (revoke key, reject,
+  revert). Approve needs no confirm (comment optional but prompted).
+- badgecounts: nav Issues link shows pending-approval count; refreshed after
+  boot, after mutations, and on WS events (best-effort, silent catch).
+- Theme toggle flips data-theme + localStorage; default dark.
+- Timestamps: relative everywhere (timeAgo), absolute in title tooltips.
+- Escape EVERYTHING interpolated into HTML with esc() (reports are untrusted
+  input — prompt-injection text must never become markup).
+- pre.code stays dark in light mode (diffs/JSON readability).
+
+6. RESPONSIVE (bottom of styles.css)
+--------------------------------------------------------------------------------
+- ≤760px: layout collapses to one column; sidebar becomes a horizontal
+  scrollable nav (static position); main padding 14px; user chip hidden;
+  distribution rows narrow (130px labels).
+- prefers-reduced-motion: ALL animations off (pulse, slide-in, shimmer).
+- Tables scroll within cards on narrow screens (overflow via .diff/.code;
+  plain .tbl may overflow — wrap future wide tables in a scroll container).
+
+7. KNOWN GAPS / SUGGESTED NEXT EDITS (do not treat as bugs in this handoff)
+--------------------------------------------------------------------------------
+- Members table has no delete/disable button (no DELETE member endpoint exists
+  server-side; adding one is a BACKEND change — out of UI scope).
+- No per-site delete button (no DELETE website endpoint either).
+- Role pills on the Team table reuse status pill tones via a label-swap hack
+  (search "replace(/>[^<]*</" in app.js) — works but fragile; a tiny
+  rolePill() helper would be cleaner.
+- pre.code in light mode keeps dark background ON PURPOSE (see §1).
+- .vio token is currently unused — intended for future AI-accented elements.
+- Long issue titles/table cells can overflow on very narrow screens; the
+  .tbl wrapper suggestion above covers it.
+- Render deploy checks show "Optional" (muted) when RENDER_API_KEY is absent
+  — deliberate: version.json verification works without it.
+
+8. API CONTRACTS THE UI DEPENDS ON (read-only reference — DO NOT change server)
+--------------------------------------------------------------------------------
+GET /api/health · POST /auth/login|logout · GET /auth/me · GET/POST
+/api/websites · GET/PATCH /api/websites/:id · GET/POST /api/websites/:id/keys
+· DELETE /api/websites/:id/keys/:keyId · POST /api/websites/:id/test ·
+GET /api/issues?status=&site=&q=&limit=&cursor= → {issues,nextCursor} ·
+GET /api/issues/:id → {issue,steps,patches,validations,approvals,deployments,
+kase} · POST /api/issues/:id/approve|reject|retry|revert ·
+GET/POST /api/settings/policy · GET /api/settings/integrations-status ·
+GET /api/audit · GET /api/stats/overview → {byStatus[{status,c}],lastDeploy,
+health} · GET/POST /api/members · GET /benchmark/results.json (static file) ·
+WS /ws (browser cookies auth; events PIPELINE_STEP/ISSUE_UPDATED/
+APPROVAL_NEEDED/DEPLOY_STATUS).
+STATUS label/tone table in app.js must cover every server status string or
+it falls back to a gray pill with the raw value (safe default — extend the
+table when adding states, never remove entries).
+================================================================================
+END OF ui.txt — restore the described UI with: git revert f923878
+================================================================================

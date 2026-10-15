@@ -1,0 +1,40 @@
+/* Part G — motion. Transform/opacity only. Full off switch for reduced motion. */
+.page-enter > * { animation: pageIn var(--dur-base) var(--ease-out) both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(8px); } }
+.stagger > * { animation: pageIn var(--dur-base) var(--ease-out) both; }
+.stagger > *:nth-child(2) { animation-delay: 30ms; } .stagger > *:nth-child(3) { animation-delay: 60ms; }
+.stagger > *:nth-child(4) { animation-delay: 90ms; } .stagger > *:nth-child(5) { animation-delay: 120ms; }
+.stagger > *:nth-child(6) { animation-delay: 150ms; } .stagger > *:nth-child(7) { animation-delay: 180ms; }
+.stagger > *:nth-child(n+8) { animation-delay: 210ms; }
+.row-flash { animation: rowFlash 1.2s ease-out; }
+@keyframes rowFlash { 0% { background: var(--accent-soft); } 100% { background: transparent; } }
+.pill-swap { animation: pillIn var(--dur-fast) var(--ease-out); }
+@keyframes pillIn { from { opacity: 0; } }
+.spin { animation: spin 700ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+@keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.dash-move { animation: dashMove 1s linear infinite; }
+@keyframes dashMove { to { stroke-dashoffset: -8; } }
+.skel { border-radius: var(--r-md); background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; min-height: 18px; margin: var(--s-2) 0; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+.toast { animation: toastIn 280ms var(--ease-spring); }
+.toast.leaving { animation: toastOut 180ms var(--ease-in) forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(24px); } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(8px); } }
+.modal-veil { animation: veilIn var(--dur-fast) var(--ease-out); }
+.modal { animation: modalIn var(--dur-base) var(--ease-out); }
+@keyframes veilIn { from { opacity: 0; } }
+@keyframes modalIn { from { opacity: 0; transform: scale(.97) translateY(8px); } }
+@media (max-width: 760px) { .modal { animation-name: sheetIn; } }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(40px); } }
+.menu-pop { animation: menuIn var(--dur-fast) var(--ease-out); transform-origin: top right; }
+@keyframes menuIn { from { opacity: 0; transform: scale(.98) translateY(-4px); } }
+.check-draw { stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw 220ms var(--ease-out) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.count-up { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .spin { animation: none !important; }
+}

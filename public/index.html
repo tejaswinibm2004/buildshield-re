@@ -1,14 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BugShield Dashboard</title>
-<link rel="stylesheet" href="/styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0B0C0F" id="meta-theme">
+<title>BugShield</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%238B7CFF'/%3E%3Cpath d='M16 6l7 2.6V14c0 4.6-3 8.1-7 10.4C12 22.1 9 18.6 9 14V8.6z' fill='none' stroke='%230B0A1F' stroke-width='2'/%3E%3Cpath d='M13.4 14.4l-1.9-1.9 1.2-1.2 0.7 0.7 3.4-3.4 1.2 1.2z' fill='%230B0A1F'/%3E%3C/svg%3E">
+<script>
+/* Apply persisted theme before first paint (no flash). */
+try {
+  var t = localStorage.getItem('bs-theme') || 'dark';
+  if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  var m = document.getElementById('meta-theme');
+  if (m) m.content = t === 'dark' ? '#0B0C0F' : '#F6F7F9';
+} catch (e) { /* defaults stand */ }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@450;500;600;650&family=JetBrains+Mono:wght@450;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/components.css">
+<link rel="stylesheet" href="/css/pages.css">
+<link rel="stylesheet" href="/css/motion.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
 </head>
 <body>
-<header class="top"><div class="brand">🛡 BugShield</div><nav id="nav"></nav><div id="me"></div></header>
-<main id="app"><p class="muted">Loading…</p></main>
-<footer class="foot muted">BugShield demo — single instance, SQLite. <span id="health"></span></footer>
-<script src="/app.js"></script>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="app-shell" hidden>
+  <aside id="sidebar" aria-label="Primary navigation"></aside>
+  <div class="frame">
+    <header id="topbar"></header>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+<div id="login-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+<div id="modal-root"></div>
+<div id="palette-root"></div>
+<div id="tooltip-root"></div>
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>
