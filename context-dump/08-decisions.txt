@@ -1,0 +1,39 @@
+08 — DECISIONS, HONEST LIMITS, NON-GOALS, DEFINITION OF DONE
+================================================================================
+DECISIONS (DECISIONS.md; why, for viva questions):
+  Dual pg/SQLite backend (not pg-only): local dev + tests stay offline;
+  production refuses ephemeral SQLite (fail-fast). scrypt over bcrypt
+  (stdlib, no native deps). Plain fetch over @octokit (fewer deps). Vanilla
+  JS UI, no build step (debuggable, CDN Lucide icons). Direct member create
+  (invite links + SMTP deferred). Screenshots skipped (element context
+  suffices). No headless-browser repro (evidence says "not performed").
+  Project suites never auto-run (no dep installs, no secrets to project
+  scripts). WS auth via handshake cookies (no JS-readable token). Ingestion
+  keys public by design. Money-in-diff implies human review (caused one
+  disclosed false positive — kept, documented). UI rebuilt on a branch,
+  merged only after local verification.
+
+HONEST LIMITS (own slide): single instance (in-process queue); deploy =
+commit + host rebuild (1-3 min, not zero-downtime); quality follows the
+model (free tiers flake; retries + repair exist); behavioral proof only as
+good as project tests (else UNVERIFIED); visual bugs judged from code +
+element context; some validators need host runtimes; Render sleeps and
+Supabase pauses on free tiers (demo-grade, not urgent-grade).
+
+NON-GOALS (explicitly NOT built): multi-tenant orgs, GitLab/Bitbucket,
+CI triggering, canary deploys, SSO, billing, mobile apps, change-password
+endpoint, member delete/disable, site delete/disconnect, onboarding
+checklist, visual before/after preview, notifications, i18n. Say "future
+work" if asked.
+
+DEFINITION OF DONE (status): both sites live on Render + widget files
+reports [DONE]; typo report -> live with zero human clicks, SHA in
+version.json [DONE fd09bae]; pricing/money bug pauses, ships after approval
+[DONE x3 further fixes]; revert works from dashboard + live [DONE 57bf924];
+non-bug + injection never auto-deploy [DONE]; >=5 file types in benchmark
+with per-language table [DONE 11 groups]; npm test green + eval shown in UI
+[DONE 25/25, Evaluation page]; no secrets in git/logs/DB/API [DONE —
+redactor tested, keys hashed]; README/RUNBOOK/DECISIONS written [DONE].
+Manual steps remaining for a fresh deploy: create fine-grained PAT, set
+Render env vars, connect repos (see 06-deploy.txt).
+================================================================================

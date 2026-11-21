@@ -1,0 +1,55 @@
+09 — FILE INVENTORY + GLOSSARY (appendix slide / speaker notes)
+================================================================================
+EVERY SOURCE FILE, ONE LINE (dashboard repo; demo-shop/ is its own repo):
+  server.js — entry: env validation, migrations, bootstrap owner, queue boot,
+    static UI + SDK serving, WS hub, sqlite-only backups.
+  render.yaml — Render blueprint (free web service, build/start, /api/health).
+  src/config.js — env parsing + production fail-fast (DATABASE_URL required).
+  src/db/db.js — run/get/all/insertGetId/exec/ping over pg pool or SQLite.
+  src/db/schema.sql + schema.pg.sql — 15 tables, mirrored dialects.
+  src/db/migrations.js — versioned additive migrations at boot.
+  src/http/router.js — all 25+ routes (health/auth/ingestion/websites/issues/
+    approvals/settings/audit/stats/members).
+  src/http/auth.js — scrypt, sessions, bootstrap owner, lockout, role helpers.
+  src/http/csrf.js — X-Requested-With + Origin/Host (ingestion exempt).
+  src/http/rateLimit.js — sliding-window limiter (login, ingestion).
+  src/http/redact.js — secret patterns, IP hashing.
+  src/ai/provider.js — OpenAI-compatible chat, JSON mode + repair, backoff,
+    fake offline mode, AI_UNAVAILABLE distinction.
+  src/ai/json.js — tolerant JSON extraction from model prose.
+  src/ai/prompts/*.md — analyzer/localizer/patcher/critic (all carry the
+    SCOPE RULE + untrusted-data delimiters).
+  src/github/client.js — ghFetch (hardened arg handling).
+  src/github/repoReader.js — tarball snapshot, cache, file listing.
+  src/github/committer.js — atomicCommit (ref/commit/blobs/tree/commit/ref).
+  src/agents/orchestrator.js — processIssue + deployAndVerify + autoRevert.
+  src/agents/{intake,localizer,analyzer,risk,patcher,critic,safety}.js —
+    pipeline stages + added-lines scanner. src/agents/validator.js —
+    recordStep/setIssueStatus/saveCase/audit. deployer.js/verifier.js —
+    ship + prove-live.
+  src/validators/*.js — per-extension real checks + NOT_PERFORMED honesty.
+  src/queue/jobQueue.js + locks.js — FIFO, retries, resume, site mutex.
+  public/index.html + css/tokens|base|components|pages|motion.css — shell +
+    mission-control design system. public/js/{app,shell}.js +
+    core/{html,api,format,store,icons,router,ws}.js +
+    components/{overlays,primitives,stepper,diff,palette}.js +
+    views/{login,inbox,overview,issues,issue,deployments,websites,website,
+    settings,team,audit,evaluation}.js — the whole dashboard SPA.
+  public/sdk/bugshield.js (+bs.js alias) — widget (shadow DOM, picker,
+    counters, 429 countdown, honest states).
+  benchmark/runner.mjs — 21 fixtures, results.json -> Evaluation page.
+  tests/*.test.js — 25 tests. docs/ + PLAN.md + DECISIONS.md + README.md.
+  demo-shop repo: index.html, styles.css, app.js (8 products, 17 planted
+  bugs), tests/cart.test.js (2 red-by-design), scripts/build.mjs
+  (config.js + version.json), render.yaml, images/*.svg (bulb missing by
+  design). Answer keys (PLANTED_BUGS.md, all-bug.md) are LOCAL ONLY.
+
+GLOSSARY (one-liners for Q&A): fingerprint = dedup hash. occurrence =
+duplicate count. drift = repo moved since analysis. atomic commit = all
+files land together or nothing. version.json = live-SHA proof. risk 59 =
+medium (example S1). threshold 70 = approval line. scope rule = fix only
+what was reported. NOT_PERFORMED = check honestly skipped. red-by-design =
+test that fails until the bot fixes the bug. dogfooding = the demo caught
+real bugs (widget race, token swap, black login, empty modal).
+================================================================================
+END OF DUMP — stitch 00..09 in order for the full narrative.

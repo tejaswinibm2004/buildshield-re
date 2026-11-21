@@ -1,0 +1,61 @@
+03 — STATE MACHINE + THE 9 AGENTS + GATES
+================================================================================
+ISSUE STATUS VALUES (stored as text, shown as 7 user stages + Stuck group):
+  RECEIVED, DEDUPLICATED (same fingerprint within 10 min -> occurrences++),
+  TRIAGING, ANALYZING, INVALID_REPORT (not a real defect, reason shown),
+  NOT_REPRODUCIBLE_IN_CODE, SOURCE_UNAVAILABLE (repo/token problem),
+  AI_UNAVAILABLE (no key or provider down), PATCHING, PATCH_FAILED,
+  VALIDATING, VALIDATION_FAILED, AWAITING_APPROVAL (human gate),
+  REJECTED_BY_ADMIN, APPROVED, PUSHING, DEPLOYING, RESOLVED_AND_DEPLOYED
+  (SHA seen in live version.json), DEPLOY_TIMEOUT, ROLLED_BACK, FAILED.
+  UI groups them into: Received / Investigating / Fixing / Needs you /
+  Shipping / Fixed & live / Closed / Stuck. Unknown values fall back to a
+  grey pill with the raw string.
+
+PIPELINE ORDER (orchestrator.processIssue, idempotent + resumable after
+restart; every stage writes a pipeline_step row + websocket event):
+  Intake -> Localizer -> Analyzer -> (invalid? stop) -> Risk -> Patcher ->
+  Critic -> Validator -> [critical? AWAITING_APPROVAL : continue] ->
+  Deployer (drift re-check, atomic commit+push) -> Verifier (poll
+  version.json up to 10 min + 3 health probes) -> RESOLVED_AND_DEPLOYED.
+
+AGENT DETAILS (one bullet each for slides):
+  INTAKE: strips HTML, truncates to caps, dedup fingerprint (key+title+page
+    path+first error), extracts hints (quoted strings, selectors, stack
+    file:line, URLs, identifiers).
+  LOCALIZER: builds repo map (skips node_modules/dist/locks, >200KB files);
+    cheap grep first (typos like "Shoping" found without LLM), stack-trace
+    names, page-URL mapping; ranks top 8; LLM picks <=5 files (paths must
+    exist — never hallucinated); reads +-80 line windows.
+  ANALYZER: strict-JSON verdict {is_defect, confidence 0..1, defect_type of
+    14 (logic, typo_copy, layout_css, security...), file, lines, explanation,
+    impact}; confidence <0.5 or is_defect=false -> INVALID_REPORT with reason.
+    SCOPE RULE: only the reported defect is judged/fixed, nothing else.
+  RISK (deterministic, explainable): base 25; defect-type weights (security
+    +25, typo -5...); money/checkout identifiers +20 AND security-sensitive;
+    sensitive path/content +15 first/+8 extra (cap +35); size +0..12; low
+    confidence +6; clamped [5,100]. Level: >=70 CRITICAL (default threshold).
+  PATCHER: LLM returns search/replace EDITS (never whole files); code-enforced:
+    path must be localized, each search matches EXACTLY ONE location,
+    <=3 files / <=5 edits/file / <=40 lines, forbidden paths (lockfiles, CI,
+    Docker, package.json deps, .env, vendor); real unified diff produced.
+  CRITIC: second independent LLM verdict approve|concern|reject + deterministic
+    scanner on ADDED lines (script/eval/fetch/URLs/base64/credentials/
+    obfuscation). reject -> PATCH_FAILED; concern -> forced approval.
+  VALIDATOR registry by extension: js (node --check), ts/tsx/jsx heuristic,
+    json, html, css (brace check), yaml, python (py_compile if installed),
+    php -l, ruby -c, gofmt, generic diff sanity. Missing runtime =
+    NOT_PERFORMED with reason (never silently passed). Project suites are NOT
+    auto-run (no dep install, no secrets to project scripts) -> reported
+    honestly; unverified results labelled UNVERIFIED.
+  DEPLOYER: drift re-check (head moved? re-queue), ONE atomic multi-file
+    commit via Git Data API, message "fix(bugshield): <summary> [ISSUE-id]"
+    with risk/validators/approver; non-fast-forward -> rebase once, else fail.
+    Per-site mutex: one deploy per site at a time.
+  VERIFIER: polls version.json every 10s up to 10 min for the pushed SHA;
+    no marker configured -> honest UNVERIFIED; health probes 3x need 2xx;
+    failed post-deploy health -> AUTO-REVERT commit -> ROLLED_BACK.
+  APPROVAL GATE triggers (any one): score>=threshold, security-sensitive,
+    per-site always-approve, autoDeploy off, safety hit, critic concern,
+    unclean validation, oversized diff. Approvers: owner/admin/reviewer.
+================================================================================

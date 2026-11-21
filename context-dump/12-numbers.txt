@@ -1,0 +1,35 @@
+12 — EVERY NUMBER, SHA, AND URL (single source for PPT tables)
+================================================================================
+SCORES: backend tests 25/25 (11 suites) | benchmark 18/21 localized (13
+language groups) | risk threshold default 70 | risk example S1 = 59 MEDIUM
+| analyzer confidence example 99% / 92% | validators per patch 2-4 runs |
+pipeline Groq calls per issue ~4-6 | ingestion caps 256KB / 30/min/key /
+60/min/IP / 10-min dedup | patch limits 3 files, 5 edits/file, 40 lines |
+session 12h TTL | passwords scrypt N=16384, min 12 chars | verifier 10s
+poll, 10min timeout, 3 probes need 2xx | queue concurrency 2 | pool max 5 |
+benchmark 21 fixtures | demo shop 17 planted bugs, 8 products, 7 SVG images
+(1 image deliberately 404) | shop tests 4 (2 red-by-design, 2 green) |
+dashboard 9 views + inbox + palette | widget <25KB, zero deps | UI rebuild
+~3600 insertions, 36 files, one branch | doc files here: 12.
+LIVE SHAs (shop-re-test, checkable on GitHub): bd5ff659 demo shop build |
+7a62a4d widget endpoint fix | fd09bae2 BOT FIX S1 (typo, approved, live) |
+57bf924 revert-to-buggy | e8ad5c2, 6ef2153, 2fceb7f three further live bot
+fixes | 5ca9171 images+ratings. Dashboard buildshield-re: 3f924c5 M1-M9b,
+c824618 render cmds, 6f5f946 Supabase, e4fc519 widget race, d6614e9 token
+swap + regressions, 805dc0e scope rule, a4524c7 UI overhaul, f923878 revert
+of it, aed7261 mission-control rebuild, 27833fb login+modal fixes.
+URLS: dashboard https://buildshield-re.onrender.com/ (+/api/health,
++/sdk/bugshield.js, +/sdk/bs.js) | shop https://shop-re-test.onrender.com/
+(+/version.json, +/config.js) | repos github.com/tejaswinibm2004/
+buildshield-re + shop-re-test | Supabase pooler port 6543 ap-northeast-2 |
+Groq https://api.groq.com/openai/v1 model openai/gpt-oss-120b.
+PIPELINE EVIDENCE IDS: probe ISSUE-a61f3c86 INVALID_REPORT | S1
+ISSUE-8cc7ba4e RESOLVED_AND_DEPLOYED | approvals by owner with written
+reasons on record | audit actors widget/system/owner. COST: $0 total.
+TIMES: typo report->live ~3-6 min (pipeline ~1-2 + rebuild ~1-3 + verify);
+median fix 3m32s observed on demo day (4 fixes). HONESTY MARKERS KEPT:
+AI_UNAVAILABLE, SOURCE_UNAVAILABLE, NOT_PERFORMED, UNVERIFIED,
+INVALID_REPORT, DEPLOY_TIMEOUT, plus disclosed false positive (#cart href)
+and two dogfooded UI bugs fixed same-day.
+================================================================================
+END — full dump complete. Stitch 00..12 in order.

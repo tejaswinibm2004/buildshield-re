@@ -1,0 +1,29 @@
+13 — SLIDE-BY-SLIDE PPT BUILD PLAN (25 slides from this dump)
+================================================================================
+1 Title: BugShield + tagline + team/college + live URLs. 2 Problem: vague
+reports, manual grep, hallucinating wrappers, fake green checks. 3 Vision:
+core loop diagram (widget->AI->commit->Render->proof). 4 Principles: P1-P6
+as six cards. 5 Architecture: 7 components + data-flow arrows. 6 Tech
+stack: exact versions + why each (stdlib scrypt, no ORM, vanilla UI).
+7 Hosting $0: Render free x2 + Supabase free + Groq free + caveats. 8 State
+machine: statuses grouped in 7 stages + Stuck (diagram). 9 Agents 1-3:
+Intake/Localizer/Analyzer with scope rule. 10 Agents 4-6: Risk table +
+Patcher limits + Critic/scanner. 11 Agents 7-9: validators (+honesty),
+deployer (6 Git calls), verifier (SHA poll + revert). 12 Human gate: rule,
+threshold 70, approver roles, approval screenshot. 13 Ingestion guards:
+ordered list + caps table. 14 DB schema: 15 tables grouped + dual backend
+diagram. 15 Dashboard tour: 4-6 screenshots (inbox, stepper, diff, risk).
+16 Widget: shadow DOM, picker capture list, states incl. 429 countdown.
+17 Live proof: fd09bae timeline (report->commit->version.json match) with
+SHA + URLs. 18 More proof: 3 extra live fixes + revert 57bf924 + probe
+INVALID_REPORT. 19 Tests: 25/25 table by area. 20 Benchmark: per-language
+table + jsx gap honesty. 21 Dogfooding: 4 real bugs found (widget race,
+token swap, black login, empty modal) + fixes. 22 Decisions: dual DB,
+no-dep-installs, public keys, free tiers. 23 Limits (honest) + non-goals.
+24 Advantages: 6 claims each with its evidence pointer. 25 Done checklist
+(all checked) + Q&A + demo offer. SPEAKER NOTES: narrate from 07/11/12;
+if anything stalls live, narrate the logged timeline — honesty IS the demo.
+Each slide: one focal point, numbers tabular, mono for SHAs/URLs, no
+paragraph walls; appendix: file inventory (09) + this plan.
+================================================================================
+END — dump complete. Build the deck from 00..13 in order.

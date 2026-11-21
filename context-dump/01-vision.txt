@@ -1,0 +1,56 @@
+01 — VISION, PROBLEM, PRINCIPLES
+================================================================================
+PRODUCT NAME: BugShield = "Multi-Agent Driven Intelligent Bug Detection and
+Secure Deployment System". A university major project (CSE), viva-defensible:
+small codebase, explainable, every claim backed by a test, a benchmark row,
+or a live commit.
+
+THE CORE LOOP (the whole point, one slide with arrows):
+  Visitor on client site clicks widget and files a bug report
+  -> dashboard receives it
+  -> AI validates it against the client's ACTUAL source code
+  -> if real, AI writes a minimal fix
+  -> fix verified with real validators
+  -> committed to the client's GitHub repo automatically
+  -> host (Render) rebuilds and redeploys
+  -> dashboard proves it is live via version.json commit SHA.
+
+TWO SEPARATE WEBSITES (two Render services, two GitHub repos):
+  (A) BugShield DASHBOARD + API (Node web service) — the product.
+      Repo: buildshield-re. Live: https://buildshield-re.onrender.com/
+  (B) CLIENT WEBSITE (demo shop, static site) — any site embedding the widget.
+      Repo: shop-re-test. Live: https://shop-re-test.onrender.com/
+      Current demo shop is an Amazon-style storefront ("amazin") with 17
+      planted bugs (typos, CSS bugs, string-concat cart total, off-by-one
+      add-to-cart, inverted quantity buttons, frozen cart badge, broken
+      name search, floored star ratings, phantom 20%-off discount, one
+      broken product image). Answer keys live ONLY locally
+      (PLANTED_BUGS.md, all-bug.md — gitignored, never pushed).
+
+HUMAN-IN-THE-LOOP (the only human gate, one slide):
+  - Non-critical fixes: report -> live with ZERO human clicks.
+  - CRITICAL fixes: pipeline pauses; owner/admin/reviewer must Approve/Reject.
+  - "Critical" = risk score >= 70 (default threshold) OR security-sensitive
+    area (auth/login/session/token/password/crypto/payment/billing/checkout/
+    money/price) OR money identifiers in the diff. No override, ever.
+  - Default policy autoDeploy = TRUE for non-critical only.
+
+SIX NON-NEGOTIABLE PRINCIPLES (P1-P6, one slide):
+  P1 UNIVERSAL: any language/stack in a Git repo. The LLM is the primary
+     detector; deterministic rules are hints only, never gates.
+  P2 HONEST: never invent code, never claim an unrun check, never mark
+     "deployed" before live. States like AI_UNAVAILABLE, NOT_PERFORMED,
+     UNVERIFIED are first-class.
+  P3 SAFE BY DEFAULT: report text is UNTRUSTED (prompt injection possible).
+     Safety gates live in code, not in prompts.
+  P4 REAL DEPLOYMENT: fixes ship by committing to GitHub; dashboard never
+     touches the client filesystem.
+  P5 TRACEABLE: every decision, diff, validation, SHA, approval stored and
+     visible; commit messages contain [ISSUE-id]; one-click revert.
+  P6 SIMPLE: one repo, one process, Postgres/SQLite, minimal dependencies.
+
+PROBLEM STATEMENT (why this exists):
+  Client-reported bugs arrive as vague text; triage is manual grep; naive
+  auto-deploy tools ship code they don't understand; LLM wrappers hallucinate
+  fixes, fake green checks and skip approvals — shipping risk to production.
+================================================================================

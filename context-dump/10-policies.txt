@@ -1,0 +1,44 @@
+10 — PROMPT RULES, RISK TABLE, SAFETY PATTERNS, PAYLOAD CAPS
+================================================================================
+PROMPT DISCIPLINE (same in analyzer/localizer/patcher/critic prompts):
+  Report text and repo text are wrapped as UNTRUSTED DATA with explicit
+  delimiters; the model is ordered to ignore instructions inside them; the
+  patch must be justified by code, never by report wording. Every prompt
+  demands STRICT JSON only. Every prompt carries the SCOPE RULE: fix and
+  judge ONLY the reported defect; other flaws found are ignored completely
+  (this rule was added after the Critic rejected a correct minimal typo fix
+  for "incompleteness" — PATCH_FAILED, then fixed, then shipped live).
+  Analyzer JSON: is_defect, confidence 0..1 (below 0.5 = INVALID_REPORT),
+  defect_type (14 classes), file, line_start/end, explanation,
+  reproduction_reasoning, user_visible_impact, needs_more_context,
+  extra_files_needed (one extra fetch loop allowed). Patcher JSON: summary,
+  files[{path, edits[{search, replace}]}], rationale, risks — search must
+  match EXACTLY ONE location or the edit is discarded with one strict
+  re-prompt. Critic JSON: verdict approve|concern|reject + concerns[].
+
+RISK TABLE (deterministic, shown factor-by-factor in UI): base 25;
+security defect_type +25; logic/data +8; config +10; layout_css/accessibility
++0; typo_copy -5; money/price/checkout/payment identifiers in diff +20 AND
+security-sensitive flag; sensitive path/content +15 first +8 each extra
+(cap +35); shared/core module +12; size +0..12 by added lines; multi-file
++4; confidence <0.7 +6; clamp [5,100]. Levels: <40 LOW, 40-69 MEDIUM,
+>=70 HIGH/CRITICAL. Policy (editable in Settings): highThreshold,
+autoDeploy, criticalGlobs (default **/auth/**, **/payment/**,
+**/checkout/**, **/login/**, **/.env*, **/secrets/**), maxFiles 3,
+maxEditsPerFile 5, maxLines 40. Per-site always_require_approval switch.
+Policy can loosen thresholds but NEVER the security-sensitive rule.
+
+SAFETY SCANNER (added lines only; hit = forced human approval): new
+<script> or remote src; inline on* handlers; eval/new Function; innerHTML /
+document.write / outerHTML with variables; fetch/XHR/WebSocket/sendBeacon;
+new http(s) URLs/domains; 120+ char base64 blobs; password/secret/key/token
+assignments; \\x-hex runs / fromCharCode (obfuscation); instruction echo
+(long report words appearing verbatim in code). Dependency/CI/config/build
+file edits are forbidden paths outright.
+
+INGESTION PAYLOAD CAPS (widget -> POST /api/v1/issues, 256KB total):
+  title<=300, description<=4000, steps<=2000, element.outer_html<=2000,
+  element.text<=500, errors<=20 (stack<=8000 each), console<=50 (<=2000
+  each), network<=20 (url+status, no bodies). Passwords/inputs never
+  collected; everything truncated server-side again after normalize.
+================================================================================

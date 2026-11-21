@@ -1,0 +1,37 @@
+BUGSHIELD — COMPLETE CONTEXT DUMP FOR PPT CREATION (40,000 characters, split files)
+================================================================================
+Folder: context-dump/ | Total target: ~40,000 characters | Status: untruncated.
+
+HOW TO USE FOR A PPT (suggested slide mapping):
+- 00-index.txt ......... you are here (map + slide plan).
+- 01-vision.txt ........ Slide 1-3: title, problem, product vision + principles.
+- 02-architecture.txt .. Slides: system diagram, tech stack, repo layout, hosting.
+- 03-pipeline.txt ...... Slides: state machine, 9-agent pipeline, risk table, gates.
+- 04-api-data.txt ...... Slides: API endpoints, ingestion guards, DB schema, queue.
+- 05-frontend.txt ...... Slides: dashboard views, new mission-control UI, widget.
+- 06-deploy.txt ........ Slides: Render + Supabase setup, env vars, smoke tests.
+- 07-evidence.txt ...... Slides: test results, benchmark table, LIVE proof timeline.
+- 08-decisions.txt ..... Slides: decisions, honest limits, non-goals, done checklist.
+- 09-files.txt ......... Appendix: every source file + glossary.
+
+RULES FOLLOWED IN THIS DUMP: every number is from verified runs (tests,
+benchmark, live commits). Secrets (passwords, API keys, tokens) are NEVER
+included — placeholders only. Nothing is invented.
+
+ONE-PAGE CHEAT SHEET (read this 60 seconds before presenting):
+  One-liner: BugShield turns a visitor's bug report into a verified live
+    fix — AI checks the real code, humans approve only the risky ones.
+  Loop: widget -> 9 agents -> GitHub commit -> Render rebuild ->
+    version.json SHA proof. Zero clicks when safe; approval when risky.
+  Proof: typo report -> bot commit fd09bae -> version.json match -> green.
+  Numbers: 25/25 tests, 18/21 fixtures, 4 live fixes, $0 hosting, 17
+    planted demo bugs, 2 red-by-design tests.
+  Gate: score >= 70 or security/money content -> human. Always.
+  Honesty: AI_UNAVAILABLE, NOT_PERFORMED, UNVERIFIED, INVALID_REPORT are
+    features, not errors — the system says what it did not do.
+  Scope: only the reported defect is ever fixed. Nothing else. Ever.
+  Stack: Node 24, Express, Supabase Postgres, Groq gpt-oss-120b, Render.
+  Q&A killers: hallucination (paths must exist, edits must match once);
+    injection (delimiters + code gates, fixture proved it); "is it live?"
+    (SHA or it didn't happen); scale (single instance, stated openly).
+================================================================================

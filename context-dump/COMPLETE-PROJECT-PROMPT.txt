@@ -1,0 +1,258 @@
+================================================================================
+COMPLETE PROJECT PROMPT — BUGSHIELD (copy-paste ready)
+================================================================================
+You are an AI assistant being given the complete context of a university major
+project called BugShield. Read everything below before answering. Treat all
+facts, numbers, SHAs and URLs as ground truth from verified runs. Never invent
+data, never claim a check ran when it did not, and never include secrets.
+
+YOUR TASK: [replace this line with what you want done — e.g. "Create a 25-slide
+PowerPoint", "Explain this in viva-style Q&A", "Continue development", etc.]
+
+--------------------------------------------------------------------------------
+1. IDENTITY AND MISSION
+--------------------------------------------------------------------------------
+BugShield = "Multi-Agent Driven Intelligent Bug Detection and Secure Deployment
+System". It is a CSE major project (BCS786, Team No 40, Sai Vidya Institute of
+Technology, VTU) designed to be small, explainable and viva-defensible: every
+claim is backed by a test, a benchmark row, or a live commit SHA.
+
+Core loop (the whole point): a visitor on a client website clicks a widget and
+reports a bug -> the BugShield dashboard receives it -> AI judges whether it is
+a REAL defect by reading the client's actual source code -> if real, AI writes
+a minimal fix -> the fix is verified with real tools -> it is committed to the
+client's GitHub repo -> Render auto-redeploys -> the dashboard proves the fix is
+live by reading the commit SHA from version.json.
+
+Two separate websites, two GitHub repos, both on Render free tier:
+  Dashboard + API: repo buildshield-re, live https://buildshield-re.onrender.com/
+  Client demo shop: repo shop-re-test, live https://shop-re-test.onrender.com/
+The demo shop is an Amazon-style storefront ("amazin") with 17 planted bugs;
+answer keys (PLANTED_BUGS.md, all-bug.md) exist only locally and are gitignored.
+
+--------------------------------------------------------------------------------
+2. NON-NEGOTIABLE PRINCIPLES
+--------------------------------------------------------------------------------
+P1 UNIVERSAL: any language/framework in a Git repo. The LLM is the primary
+detector and patcher; deterministic rules are hints only, never gates.
+P2 HONEST: never invent code, never claim an unrun check, never mark deployed
+before live. AI_UNAVAILABLE / NOT_PERFORMED / UNVERIFIED are first-class states.
+P3 SAFE BY DEFAULT: report text is untrusted (prompt injection possible);
+safety gates are enforced in code, not in prompts.
+P4 REAL DEPLOYMENT: fixes ship via GitHub commits; the dashboard never writes
+to the client's filesystem.
+P5 TRACEABLE: every decision, diff, validation, SHA and approval is stored and
+visible; commit messages contain [ISSUE-id]; one-click revert.
+P6 SIMPLE: one repo, one process, minimal dependencies, $0 hosting.
+
+Human-in-the-loop: non-critical fixes go report->live with ZERO human clicks;
+critical fixes pause for owner/admin/reviewer approval. Critical = risk >= 70
+OR security-sensitive area (auth/login/session/token/password/crypto/payment/
+billing/checkout/money/price) OR money identifiers in the diff. No override.
+Default org policy autoDeploy = TRUE for non-critical only.
+
+--------------------------------------------------------------------------------
+3. COMPONENTS AND TECH STACK
+--------------------------------------------------------------------------------
+Seven components: (1) Widget SDK at /sdk/bugshield.js (+ /sdk/bs.js alias);
+(2) public ingestion API (only CORS-open endpoint); (3) orchestrator + 9 agents
+with in-process job queue and per-site deploy mutex; (4) GitHub integration
+(tarball read + atomic Git Data API commit); (5) pluggable OpenAI-compatible AI
+layer (Groq openai/gpt-oss-120b in production); (6) vanilla-JS dashboard SPA;
+(7) demo client static shop.
+
+Exact stack: Node.js 24 (.node-version + NODE_VERSION), Express 4, ws,
+node:sqlite WAL for dev/test, pg pool to Supabase Postgres in production,
+dotenv, node:test (25 tests), vanilla HTML/CSS/JS with CDN Lucide icons,
+no ORM, no build step. Render: free web service (1 instance, no disk) + free
+static site with Auto-Deploy ON; Supabase free Postgres (pooled port 6543,
+pauses after ~7 idle days); Groq free tier. Free-tier caveats are documented:
+Render sleeps (cold starts), Supabase pauses, free models flake.
+
+--------------------------------------------------------------------------------
+4. PIPELINE AND THE 9 AGENTS
+--------------------------------------------------------------------------------
+State machine statuses: RECEIVED, DEDUPLICATED, TRIAGING, ANALYZING,
+INVALID_REPORT, NOT_REPRODUCIBLE_IN_CODE, SOURCE_UNAVAILABLE, AI_UNAVAILABLE,
+PATCHING, PATCH_FAILED, VALIDATING, VALIDATION_FAILED, AWAITING_APPROVAL,
+REJECTED_BY_ADMIN, APPROVED, PUSHING, DEPLOYING, RESOLVED_AND_DEPLOYED,
+DEPLOY_TIMEOUT, ROLLED_BACK, FAILED. UI groups them into Received /
+Investigating / Fixing / Needs you / Shipping / Fixed & live / Closed / Stuck.
+
+Order: Intake -> Localizer -> Analyzer -> Risk -> Patcher -> Critic -> Validator
+-> [approval gate] -> Deployer -> Verifier. Every stage writes a pipeline_step
+row and broadcasts over WebSocket; stages are idempotent and resumable after
+restart (stuck jobs re-queued on boot).
+
+  1. INTAKE: strip HTML, cap lengths, fingerprint (key+title+page path+first
+     error, 10-min dedup window -> occurrences++), extract quoted strings,
+     selectors, stack file:line, URLs, identifiers.
+  2. LOCALIZER: repo map (ignores node_modules/dist/locks/>200KB); cheap grep
+     first (e.g. typo "Shoping" found without LLM), stack-trace file names,
+     page-URL mapping; rank top 8; LLM selects <=5 files that MUST exist;
+     read +-80 line windows.
+  3. ANALYZER: strict JSON {is_defect, confidence, defect_type (14 classes),
+     file, lines, explanation, impact}; confidence <0.5 or is_defect=false ->
+     INVALID_REPORT with the reason shown to admin.
+  4. RISK: deterministic 0-100: base 25; defect-type weights (security +25,
+     typo_copy -5); sensitive path +15/+8 capped +35; money/checkout +20 AND
+     human gate; size +0..12; low confidence +6. >=70 = CRITICAL.
+  5. PATCHER: search/replace edits only, each must match EXACTLY ONE location,
+     <=3 files, <=5 edits/file, <=40 changed lines, forbidden paths blocked,
+     real unified diff, one strict re-prompt on failure.
+  6. CRITIC + SAFETY: second LLM approve|concern|reject plus deterministic
+     scanner on ADDED lines (scripts, URLs, eval, innerHTML, network calls,
+     base64, credentials, obfuscation, report-instruction echo).
+  7. VALIDATOR: registry by extension — js (node --check), ts/tsx/jsx, json,
+     html, css, yaml, python (py_compile), php -l, ruby -c, gofmt, generic
+     sanity. Missing runtime -> NOT_PERFORMED with reason (never green).
+     Project tests are NOT auto-run (no dep installs, no secrets to scripts).
+  8. DEPLOYER: drift re-check, ONE atomic multi-file commit via Git Data API
+     (ref -> commit -> blobs -> tree -> commit -> ref PATCH), message
+     "fix(bugshield): <summary> [ISSUE-id]" with risk/validators/approver;
+     non-fast-forward -> rebase once; per-site mutex.
+  9. VERIFIER: poll version.json every 10s up to 10 min for the pushed SHA;
+     no marker -> UNVERIFIED; 3 health probes need 2xx; failed post-deploy
+     health -> automatic revert commit -> ROLLED_BACK.
+
+Approval gate triggers: score >= threshold, security-sensitive, per-site
+always-approve, autoDeploy disabled, safety hit, critic concern, validation not
+clean, oversized diff. Scope rule in every prompt: fix ONLY the reported
+defect; ignore other bugs noticed in the code.
+
+--------------------------------------------------------------------------------
+5. API, SECURITY, DATA MODEL
+--------------------------------------------------------------------------------
+API: GET /api/health; POST /api/v1/issues (public, CORS * for POST+OPTIONS);
+/auth/login|logout|/me; /api/websites CRUD + /test + /keys; /api/issues list
+(cursor pagination) + :id + approve|reject|retry|revert; /api/settings/policy
++ integrations-status; /api/audit; /api/stats/overview; /api/members; WS /ws.
+Uniform JSON errors; CSRF header X-Requested-With + Origin/Host on mutations.
+
+Ingestion guards in order: 256KB cap (413) -> key hash (401) -> origin
+allow-list (403) -> 30/min/key and 60/min/IP with Retry-After (429) ->
+validation -> 10-min dedup -> store -> async enqueue. Caps: title 300,
+description 4000, steps 2000, outerHTML 2000, text 500, errors 20 (stack
+8000), console 50, network 20 (URL+status only). No passwords/input values.
+
+Security: scrypt passwords N=16384 min 12 chars, 256-bit sessions hashed at
+rest 12h TTL, HttpOnly SameSite=Strict cookies, login lockout, central redactor
+for tokens/keys, keys stored hashed and shown once, HS256-free opaque tokens,
+role gates (owner/admin/reviewer/viewer), nightly backups on SQLite path.
+
+DB (15 tables): users, sessions, websites, ingestion_keys, issues,
+issue_cases, pipeline_steps, patches, validation_runs, approvals, deployments,
+settings, audit_log, jobs, _migrations. Dual backend via DATABASE_URL:
+schema.sql (SQLite AUTOINCREMENT, dev/test) and schema.pg.sql (Postgres
+SERIAL, production). `?` placeholders rewritten to `$n`; insertGetId uses
+RETURNING on pg. Fail-fast if production boots without DATABASE_URL.
+
+--------------------------------------------------------------------------------
+6. FRONTEND AND WIDGET
+--------------------------------------------------------------------------------
+Dashboard SPA ("mission control"): dark graphite + iris violet, Inter +
+JetBrains Mono, dark/light/system theme persisted pre-paint, grouped sidebar
+(Work/Sites/Insight/Admin), topbar with Ctrl+K command palette, live chip,
+notification bell, user menu. Views: Login (split brand panel), Inbox
+(approval cards with reasons + mini-diff + J/K/A/R keys), Overview (stat tiles,
+funnel, live feed, charts, health), Issues (stage/site/risk/search filters,
+saved views, bulk actions, CSV, quick-view drawer), Issue detail (sticky live
+stepper, pinned approval panel, tabs Overview/Fix/Validation/Deployment/
+Activity, diff viewer with twin gutters and split mode, risk gauge + factors,
+safety checklist), Deployments, Websites (3-step wizard), Website detail,
+Settings, Team (role matrix), Audit, Evaluation. Toasts never alert(), confirm
+modals, skeletons, empty states, session-expiry modal, no re-render while
+typing, mobile bottom tabs, reduced-motion support.
+
+Widget: shadow DOM, floating/inline trigger, form with counters and
+collapsible steps, "Point at the problem" capturing selector/outerHTML/text/
+box/computed styles, error/console/network capture, technical-details toggle,
+states for RECEIVED/DEDUPLICATED/429 countdown/misconfiguration. Key is public
+by design; protection is origin allow-list + rate limits. Client build script
+writes config.js from BUGSHIELD_* env and version.json with RENDER_GIT_COMMIT.
+
+--------------------------------------------------------------------------------
+7. VERIFIED RESULTS AND LIVE PROOF
+--------------------------------------------------------------------------------
+Backend tests: 25/25 green (node:test) covering ingestion guards, CSRF, risk,
+edit uniqueness, forbidden paths, safety scanner, validators incl.
+NOT_PERFORMED, mocked analyzer/patcher/critic, verifier, localizer, GitHub
+committer auth regression. Benchmark: 21 fixtures, 18/21 localized;
+per-language html 1/1, css 3/3, js 4/4, ts 1/1, py 3/3, php 1/1, config 1/1,
+broken-asset 1/1, go 1/1, ruby 1/1; jsx 0/1 offline (known gap); injection
+fixture forced approval; negatives correctly empty.
+
+Live proof (checkable): typo issue ISSUE-8cc7ba4e went RECEIVED -> bot commit
+fd09bae216d ("fix(bugshield): auto fix [ISSUE-8cc7ba4e]", risk 59, approver
+recorded) -> version.json on shop reported that SHA -> RESOLVED_AND_DEPLOYED
+with all 9 stepper nodes green. Three more bot fixes shipped live
+(2ff24508, 678dde34, 50e0af43). Probe issue ISSUE-a61f3c86 ended honestly
+INVALID_REPORT. Revert tested: fd09bae reverted in 57bf924, shop rebuilt buggy.
+Later typo fix 6ba66fd was reverted in fa4becc on request. Latest ship of the
+new mission-control dashboard: commit 27833fb (login black-screen fix + wizard
+modal fix). Total hosting cost $0. Median observed fix time 3m32s.
+
+Real bugs found by dogfooding, each fixed with regression tests: widget
+endpoint race (last-script-tag assumption -> src match + data-endpoint),
+ghFetch token/options swap (Bearer [object Object] -> 404 on blob POST -> call
+sites + hardened client + 2 tests), black login screen (display:grid beat
+[hidden] -> one-line !important fix), empty wizard modal (appendChild(undefined)
+-> guard), scope fight (critic rejected minimal diffs -> SCOPE RULE added to
+prompts). These are excellent viva stories.
+
+--------------------------------------------------------------------------------
+8. DECISIONS, LIMITS, DONE STATUS
+--------------------------------------------------------------------------------
+Decisions: dual pg/SQLite backend; scrypt stdlib; plain fetch to GitHub;
+vanilla UI; no invite-link SMTP (direct member create); no screenshots;
+no headless-browser repro (evidence says "not performed"); no auto-install of
+project deps; WS auth via handshake cookie; money-in-diff always needs a human
+(disclosed false positive from #cart in a rewritten nav line); UI rebuilt on a
+branch and merged only after verification.
+
+Honest limits: single instance/in-process queue; deploy = commit + host rebuild
+(1-3 min, not zero-downtime); quality follows the model; behavioral proof only
+as good as project tests; visual bugs judged from code + element context;
+some validators need host runtimes; free tiers sleep/pause.
+Non-goals: multi-tenancy, GitLab/Bitbucket, CI triggering, canary deploys,
+SSO, billing, mobile apps, change-password endpoint, member/site delete,
+onboarding checklist, before/after preview, notifications, i18n.
+
+Definition of done: both sites live [DONE]; zero-click typo fix proven by SHA
+[DONE fd09bae]; money bug approval + live [DONE]; revert verified [DONE];
+non-bug/injection never auto-deploy [DONE]; >=5 languages benchmarked [DONE];
+npm test green + eval shown in UI [DONE]; no secrets anywhere [DONE]; docs
+written [DONE]. Manual steps for a fresh deploy: fine-grained PAT, Render env
+vars, connect repos.
+
+--------------------------------------------------------------------------------
+9. FILE INVENTORY (for code work)
+--------------------------------------------------------------------------------
+Dashboard repo root: server.js, render.yaml, package.json, .env.example,
+README.md, PLAN.md, DECISIONS.md, ui.txt, docs/{ARCHITECTURE,RUNBOOK,EVIDENCE}.md,
+context-dump/*.txt. src/config.js. src/db/{db,migrations}.js + schema.sql +
+schema.pg.sql. src/http/{router,auth,csrf,rateLimit,redact}.js. src/ai/
+{provider,json}.js + prompts/{analyzer,localizer,patcher,critic}.md. src/github/
+{client,repoReader,committer}.js. src/agents/{orchestrator,intake,localizer,
+analyzer,risk,patcher,critic,validator,deployer,verifier,safety}.js.
+src/validators/{js,ts,json,html,css,yaml,python,php,ruby,go,generic}.js.
+src/queue/{jobQueue,locks}.js. public/index.html; public/css/{tokens,base,
+components,pages,motion}.css; public/js/app.js + shell.js + core/* +
+components/* + views/*; public/sdk/{bugshield.js,bs.js}; public/benchmark/
+results.json. benchmark/runner.mjs. tests/*.test.js. demo-shop/ is its own
+git repo (shop-re-test): index.html, styles.css, app.js, tests/cart.test.js,
+scripts/build.mjs, render.yaml, images/*.svg, config.example.js; PLANTED_BUGS.md
+and all-bug.md are local gitignored answer keys.
+
+--------------------------------------------------------------------------------
+10. RULES FOR YOUR ANSWER
+--------------------------------------------------------------------------------
+Use only the facts above. Do not invent numbers, SHAs or capabilities. If a
+capability is unavailable, say so explicitly. Keep the codebase small and the
+explanation viva-friendly. Secrets must never appear in your output — use
+placeholders. If asked to build slides, preserve existing deck format and
+images and change text only. If asked to code, keep backend untouched unless
+explicitly requested, run npm test, commit per milestone, and report honestly.
+================================================================================
+END OF COMPLETE PROJECT PROMPT
+================================================================================

@@ -1,0 +1,49 @@
+02 — ARCHITECTURE, TECH STACK, HOSTING
+================================================================================
+SEVEN COMPONENTS:
+  1. Widget SDK (browser JS at /sdk/bugshield.js, + alias /sdk/bs.js).
+  2. Ingestion API (public; the ONLY CORS-open endpoint).
+  3. Orchestrator + 9 agents (in-process job queue, per-site deploy mutex).
+  4. GitHub integration (repo read via tarball API; atomic commit via Git
+     Data API: ref -> commit -> blobs -> tree -> commit -> ref update).
+  5. AI provider layer (OpenAI-compatible chat completions; Groq
+     openai/gpt-oss-120b in production; strict JSON + one repair retry).
+  6. Dashboard UI (vanilla JS SPA, no build step; rebuilt "mission control").
+  7. Demo client shop (dependency-free static site, own repo).
+
+TECH STACK (exact, for architecture slide):
+  Node.js 24 (pinned via .node-version + NODE_VERSION env), Express 4,
+  ws (live updates), node:sqlite (WAL, dev/test), pg pool (Supabase
+  Postgres, production), dotenv, vanilla HTML/CSS/JS frontend, node:test
+  (25 tests), python only for tooling. No ORM, no framework, no build step.
+
+DASHBOARD REPO LAYOUT (buildshield-re):
+  server.js (entry, 0.0.0.0:$PORT) | render.yaml (Render blueprint: free
+  plan, 1 instance, build `npm install`, start `node server.js`,
+  healthCheckPath /api/health) | src/config.js (env parsing, fail-fast
+  validation) | src/db/{schema.sql (SQLite), schema.pg.sql (Postgres
+  SERIAL keys), db.js (dual backend, ? -> $n rewrite, insertGetId via
+  RETURNING), migrations.js (versioned, additive)} |
+  src/http/{router.js, auth.js (scrypt N=16384, 256-bit sessions, 12h TTL,
+  lockout), csrf.js, rateLimit.js, redact.js} |
+  src/ai/{provider.js (retries/backoff, fake offline mode), json.js
+  (tolerant extraction), prompts/*.md (analyzer/localizer/patcher/critic)} |
+  src/github/{client.js, repoReader.js (tarball snapshot + disk cache),
+  committer.js} | src/agents/{intake, localizer, analyzer, risk, patcher,
+  critic, validator, deployer, verifier, orchestrator, safety} |
+  src/validators/{js,ts,json,html,css,yaml,python,php,ruby,go,generic} |
+  src/queue/{jobQueue.js, locks.js} | public/{index.html, css/*, js/*,
+  sdk/bugshield.js, sdk/bs.js, benchmark/results.json} | benchmark/runner.mjs
+  (21 cross-stack fixtures) | tests/*.test.js | docs/{ARCHITECTURE.md,
+  RUNBOOK.md, EVIDENCE.md} | client-template/ (starter shop, superseded by
+  demo-shop/) | demo-shop/ (SEPARATE git repo -> shop-re-test).
+
+HOSTING (all free tier):
+  Dashboard = Render Web Service (free, 1 instance, no disk; data in
+  Supabase). Shop = Render Static Site (free, Auto-Deploy ON, build
+  `node scripts/build.mjs`, publish ./). Database = Supabase free Postgres
+  (pooled URI port 6543; project pauses after ~7 idle days; pool max 5).
+  AI = Groq free tier. Total hosting cost: $0.
+  Free-tier caveats (honest slide): Render sleeps (cold starts delay queue),
+  Supabase pauses when idle (unpause + restart service), free LLMs flake.
+================================================================================

@@ -1,0 +1,42 @@
+05 — DASHBOARD UI + WIDGET SDK
+================================================================================
+DASHBOARD (vanilla JS SPA, no build; rebuilt "mission-control" theme):
+  Dark graphite + iris-violet accent, Inter + JetBrains Mono, light/dark/
+  system toggle (persisted, pre-paint, no flash). Sidebar groups WORK
+  (Inbox/Issues/Deployments), SITES (Websites), INSIGHT (Overview/
+  Evaluation), ADMIN (Settings/Team/Audit). Topbar: breadcrumbs, Ctrl+K
+  command palette, live chip, notification bell with approval count, theme,
+  avatar menu. VIEWS: Login (split brand panel); Inbox (approval cards with
+  reasons chips, mini-diff, J/K/A/R keyboard flow); Overview (attention
+  strip, stat tiles, fix funnel, live activity feed, charts, health);
+  Issues (stage/site/risk/search filters, saved views, bulk retry/export,
+  CSV, quick-view drawer); Issue detail (sticky live stepper, pinned
+  approval panel, tabs Overview/Fix/Validation/Deployment/Activity, diff
+  viewer with gutters + intra-line highlight + split mode, risk gauge +
+  factor bars, safety checklist, side rail); Deployments (proof table);
+  Websites (site cards, 3-step connect wizard with live first-report check);
+  Website detail (snippet+copy, keys table, settings, checks); Settings
+  (policy editor with live preview, integrations, AI, appearance); Team
+  (members + role matrix); Audit (filters, expandable JSON, CSV);
+  Evaluation (per-language recall table, honesty badge live-vs-fixture).
+  Behaviors: toasts (never alert()), confirm modals, skeletons, empty
+  states, relative times, no re-render while typing, session-expiry modal
+  preserving route, role gating, mobile bottom tabs + vertical stepper,
+  reduced-motion support. Footer carries no infra claims (version only).
+
+WIDGET SDK (/sdk/bugshield.js, alias /sdk/bs.js; shadow-DOM so host CSS
+  can't break it): floating or inline button; form (title/description/steps
+  with counters, collapsible steps); "Point at the problem" captures
+  selector path, tag, outerHTML, text, box + computed styles; auto context
+  (URL, UA, viewport, language, referrer); last errors/console/network
+  failures; technical-details toggle; states: received / deduplicated /
+  429 countdown / misconfigured. Ingestion key is PUBLIC by design
+  (origin allow-list + rate limit + dedup are the real protection).
+  REAL BUGS FOUND BY DOGFOODING: (1) endpoint race — SDK used last script
+  tag, app.js won the race, reports POSTed to the shop (200 HTML) -> fixed
+  with src-match self-detection + data-endpoint + cfg.key support; (2) black
+  login screen — author display:grid overrode [hidden]; one-line fix;
+  (3) empty wizard modal — appendChild(undefined) threw; guarded.
+  Client contract: build script writes config.js from BUGSHIELD_* env +
+  version.json {commit: RENDER_GIT_COMMIT} — the SHA the Verifier polls.
+================================================================================

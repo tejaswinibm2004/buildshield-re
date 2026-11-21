@@ -1,0 +1,43 @@
+07 — VERIFIED RESULTS + LIVE PROOF TIMELINE
+================================================================================
+AUTOMATED TESTS: 25/25 green, one command (`npm test`, node:test): ingestion
+guards (401/403/413/429/dedup/origin), CSRF, risk table (typo low vs money
+critical vs security path), edit-uniqueness, forbidden paths, safety scanner
+positive+negative, validators incl. NOT_PERFORMED paths, stubbed
+analyzer/patcher/critic round-trip, mocked verifier (SHA match + UNVERIFIED
+honesty), localizer grep ranking, GitHub committer auth regression
+(Bearer header on all 6 write calls), ghFetch opts-tolerance.
+
+BENCHMARK (`npm run eval`, offline fixtures, shown on Evaluation page):
+21 cases, 18/21 localized. Per-language: html 1/1, css 3/3, js 4/4, ts 1/1,
+py 3/3, php 1/1, config 1/1, broken-asset 1/1, go 1/1, ruby 1/1, inject-script
+gate forced-approval correct, negatives correctly empty, jsx 0/1 (known
+offline-heuristic gap; LLM selection step covers it live).
+
+LIVE PROOF (production, checkable right now):
+  1. Probe report "probe" -> full pipeline ran -> INVALID_REPORT with reason
+     (job done, zero errors) — nonsense in, honest verdict out.
+  2. S1 "Typo Shoping in nav" (+ element picker selector) -> localized
+     index.html -> analyzer confirmed lines 13/18 -> patch (Shopping +
+     groceries) -> critic approve -> validators pass -> risk 59
+     (security-sensitive via incidental #cart href — disclosed false
+     positive) -> human approved with written reason -> drift check ->
+     ATOMIC bot commit fd09bae216d ("fix(bugshield): auto fix
+     [ISSUE-8cc7ba4e]", risk/validators/approver in body) -> Render rebuilt
+     -> version.json reported fd09bae -> RESOLVED_AND_DEPLOYED, all 9
+     stepper nodes green. Homepage visibly fixed.
+  3. Follow-up session: 3 more bot-fix commits shipped live the same way
+     (issues 50e0af43, 678dde34, 2ff24508 — approvals + deployments on
+     record).
+  4. Revert tested: fix commit reverted (57bf924), shop rebuilt buggy —
+     history preserved, no force-push.
+  5. New mission-control UI deployed: verified on production across login,
+     inbox, issues, detail, websites, settings, audit, eval, palette,
+     both themes, 390px mobile — zero console errors.
+
+ADVANTAGES TO HIGHLIGHT (each backed above): zero-click safe path; human
+gate that actually holds (money/injection cases); honesty as a feature
+(states instead of fake success); minimal scoped diffs; atomic traceable
+commits; one-click revert; any-language LLM core; $0 hosting; small
+explainable codebase (viva-friendly).
+================================================================================

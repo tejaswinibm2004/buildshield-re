@@ -1,0 +1,37 @@
+11 — VIVA Q&A + LIVE DEMO SCRIPT
+================================================================================
+Q: Why multi-agent instead of one big prompt? A: Separation makes failures
+diagnosable — each stage logs evidence; when our deploy died, the step log
+pointed at blob creation, not "the AI". Independent critic + deterministic
+scanner beats self-review. Q: Why not auto-deploy everything? A: The risk
+gate + scope rule + safety scanner hold the line; S2 money bug and S4
+injection both parked instead of shipping. Q: What if the LLM hallucinates?
+A: Paths must exist in the snapshot, search blocks must match exactly once,
+diffs must be non-empty and within limits — code constraints, not wishes.
+Q: What if AI key is missing? A: AI_UNAVAILABLE, issues wait, retry recovers
+— demonstrated. Q: How do you know it's live? A: version.json must report
+the pushed SHA plus 2xx health probes; else DEPLOY_TIMEOUT or UNVERIFIED —
+never assumed. Q: What about prompt injection? A: Untrusted delimiters +
+code-enforced gates; our injection fixture forced approval. Q: Scale? A:
+Honestly single-instance (in-process queue, one Render instance); quality
+follows the model; free tiers sleep/pause — demo-grade, stated openly.
+Q: Why not run the project's own tests? A: No dep installs and no secrets
+to project scripts — reported NOT_PERFORMED instead of faked. Q: Revert?
+A: New commit restoring blobs (never history rewrite), verified live again.
+Q: Cost? A: $0 — Render free, Supabase free, Groq free tier, vanilla JS.
+
+LIVE DEMO SCRIPT (5 minutes, all real):
+  1. Show the buggy shop (typos, broken total) — 20s.
+  2. File S1 from the widget WITH element picker — 30s.
+  3. Dashboard: watch RECEIVED -> pipeline steps appear live; open the issue:
+     analyzer verdict + confidence, risk factor bars, unified diff, critic,
+     validators (note NOT_PERFORMED honesty) — 90s.
+  4. Approval: explain the gate, approve with comment — 20s.
+  5. Show bot commit fd09bae on GitHub (message carries [ISSUE-id], risk,
+     approver) — 20s. 6. Reload shop: fixed text + version.json SHA match,
+     dashboard RESOLVED_AND_DEPLOYED with all nodes green — 30s.
+  7. Counter-demo: file "add dark mode" -> INVALID_REPORT with reason; show
+     the money-bug approval parked from history — 40s.
+  Backup line if anything stalls: every state is honest and every step is
+  logged — narrate the timeline instead of refreshing.
+================================================================================

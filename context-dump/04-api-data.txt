@@ -1,0 +1,42 @@
+04 — API, INGESTION GUARDS, AUTH, DATA MODEL
+================================================================================
+API (all JSON {success,...}; only ingestion + health are public):
+  GET /api/health (no auth, first route, Render health check).
+  POST /api/v1/issues (PUBLIC, sole CORS-open endpoint: POST+OPTIONS, ACAO *).
+  POST /auth/login|logout, GET /auth/me.
+  GET/POST /api/websites, GET/PATCH /api/websites/:id,
+  POST /api/websites/:id/test (github+site+ai checks),
+  GET/POST /api/websites/:id/keys, DELETE .../keys/:keyId (revoke).
+  GET /api/issues?status=&site=&q=&limit=&cursor= (cursor pagination),
+  GET /api/issues/:id (issue+steps+patches+validations+approvals+deployments+case),
+  POST /api/issues/:id/approve|reject|retry|revert.
+  GET/POST /api/settings/policy, GET /api/settings/integrations-status,
+  GET /api/audit (200 recent), GET /api/stats/overview,
+  GET/POST /api/members. WS /ws (cookie auth; events PIPELINE_STEP,
+  ISSUE_UPDATED, APPROVAL_NEEDED, DEPLOY_STATUS; capped reconnect backoff).
+
+INGESTION GUARDS (in order; every rejection audited, generic errors only):
+  256KB cap (413) -> key hash lookup (401) -> per-key origin allow-list
+  (403) -> 30/min/key + 60/min/IP limits with Retry-After (429) ->
+  validation -> 10-min dedup window -> store -> async enqueue.
+
+AUTH/SECURITY: scrypt passwords (N=16384, min length 12), 256-bit sessions
+  hashed at rest (12h TTL), HttpOnly SameSite=Strict cookies, CSRF via
+  X-Requested-With + Origin/Host on mutations, login lockout backoff,
+  central secret redactor (tested), env-only secrets, nightly SQLite file
+  backups (SQLite backend) / Supabase backups (Postgres backend).
+
+DATABASE (15 tables; dual backend selected by DATABASE_URL):
+  users, sessions, websites (repo_owner/name/branch/root_path/site/health/
+  version_path/always_require_approval), ingestion_keys (hash only, shown
+  once, origins JSON, revoke), issues (id ISSUE-<hex>, fingerprint,
+  occurrences, status+reason), issue_cases (resumable agent JSON),
+  pipeline_steps, patches (diff, risk, critic), validation_runs
+  (passed|failed|not_performed), approvals, deployments (sha/url/health/
+  revert), settings (thresholds/autoDeploy/globs/limits), audit_log, jobs
+  (queue with attempts). SQLite schema.sql (AUTOINCREMENT) mirrors
+  schema.pg.sql (SERIAL); ? placeholders rewritten to $n; insertGetId uses
+  RETURNING on pg. Additive versioned migrations run at boot (fail fast if
+  DB unreachable). QUEUE: in-process FIFO, concurrency cap, stuck-job resume
+  on boot, per-site deploy mutex.
+================================================================================

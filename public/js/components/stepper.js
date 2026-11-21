@@ -19,7 +19,7 @@ export function nodeStates(steps, issueStatus) {
   for (const s of steps) by[s.name] = s.status;
   const st = (n, okNames, opts = {}) => {
     if (by[n] === 'failed' || /fail|reject|invalid/.test(by[n] || '')) return 'failed';
-    if (okNames.some(k => (by[k] || '').match(/ok|pass|approve|clean|paused|done/))) return 'done';
+    if (okNames.some(k => (by[k] || '').match(/ok|pass|approve|clean|paused|done|low|medium|high|critical|concern/i))) return 'done';
     return opts.default || 'pending';
   };
   const states = {
@@ -37,7 +37,15 @@ export function nodeStates(steps, issueStatus) {
   else if (['APPROVED', 'PUSHING', 'DEPLOYING', 'RESOLVED_AND_DEPLOYED'].includes(issueStatus)) states.approve = 'done';
   else if (issueStatus === 'REJECTED_BY_ADMIN') states.approve = 'failed';
   if (['PUSHING', 'DEPLOYING'].includes(issueStatus)) states.deploy = 'active';
-  if (issueStatus === 'RESOLVED_AND_DEPLOYED') { states.deploy = 'done'; states.live = 'done'; }
+  if (issueStatus === 'RESOLVED_AND_DEPLOYED') {
+    // The fix is live — every stage that ran is complete. Risk steps are
+    // stored as LOW/MEDIUM/HIGH/CRITICAL, not "ok", so they must be forced
+    // to done here or the node shows a false active spinner forever.
+    for (const k of ['locate', 'analyze', 'risk', 'fix', 'validate', 'approve', 'deploy', 'live']) {
+      if (states[k] !== 'failed') states[k] = 'done';
+    }
+    states.live = 'done';
+  }
   if (issueStatus === 'DEPLOY_TIMEOUT') { states.deploy = 'done'; states.live = 'failed'; }
   if (issueStatus === 'ROLLED_BACK') states.live = 'failed';
   // first non-done node becomes active (unless a human gate or failure holds)
